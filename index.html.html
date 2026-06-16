@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<!-- saved from url=(0062)file:///C:/Users/Suporte/Downloads/dashboard_kpis_live_14.html -->
+<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard KPIs — Junho 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+  :root {
+    --bg:#0d0f14; --surface:#161921; --surface2:#1e2230; --border:#262c3e;
+    --text:#e8eaf0; --muted:#6b7394; --accent:#4f8ef7;
+    --green:#22c98e; --red:#f25f5c; --amber:#f5a623;
+    --sp:#7c6aff; --poa:#22c98e; --mat:#f5a623;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+
+  header{padding:28px 40px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px}
+  .header-left h1{font-size:22px;font-weight:700;letter-spacing:-.3px}
+  .header-left p{font-size:12px;color:var(--muted);margin-top:3px}
+  .header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.3px}
+  .badge-info{background:rgba(79,142,247,.15);color:var(--accent);border:1px solid rgba(79,142,247,.3)}
+  .badge-ok{background:rgba(34,201,142,.12);color:var(--green);border:1px solid rgba(34,201,142,.3)}
+  .badge-warn{background:rgba(242,95,92,.13);color:var(--red);border:1px solid rgba(242,95,92,.3)}
+  .btn-refresh{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s}
+  .btn-refresh:hover{background:var(--border)}
+  .spin{display:inline-block;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .tabs{display:flex;gap:2px;padding:20px 40px 0;border-bottom:1px solid var(--border)}
+  .tab{padding:9px 20px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);transition:all .2s;user-select:none}
+  .tab.active{color:var(--text);border-bottom-color:var(--accent)}
+  .tab:hover:not(.active){color:var(--text)}
+
+  .panel{display:none;padding:32px 40px}
+  .panel.active{display:block}
+
+  /* LOADING */
+  .loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:16px;color:var(--muted)}
+  .loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+  .error-state{background:rgba(242,95,92,.08);border:1px solid rgba(242,95,92,.3);border-radius:10px;padding:24px;color:var(--red);text-align:center;margin:20px 0}
+  .error-state p{margin-top:8px;font-size:13px;color:var(--muted)}
+
+  /* KPI CARDS */
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:14px;margin-bottom:32px}
+  .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+  .kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px}
+  .kpi-value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;line-height:1}
+  .kpi-sub{font-size:11px;color:var(--muted);margin-top:6px}
+  .green{color:var(--green)} .red{color:var(--red)} .amber{color:var(--amber)}
+
+  .section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+  .table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:32px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead tr{background:var(--surface2)}
+  th{padding:10px 14px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);white-space:nowrap;border-bottom:1px solid var(--border)}
+  th.num,td.num{text-align:right}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:rgba(255,255,255,.03)}
+  td{padding:10px 14px;white-space:nowrap}
+  td.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+
+  .team-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.4px}
+  .team-sp{background:rgba(124,106,255,.18);color:var(--sp)}
+  .team-poa{background:rgba(34,201,142,.15);color:var(--poa)}
+  .team-mat{background:rgba(245,166,35,.15);color:var(--mat)}
+
+  .status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+  .status-ok{background:rgba(34,201,142,.15);color:var(--green)}
+  .status-out{background:rgba(242,95,92,.13);color:var(--red)}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+  .dot-green{background:var(--green)} .dot-red{background:var(--red)}
+
+  .prog-wrap{display:flex;align-items:center;gap:8px}
+  .prog-bar{flex:1;height:5px;background:var(--border);border-radius:3px;min-width:60px}
+  .prog-fill{height:100%;border-radius:3px}
+  .prog-label{font-family:'JetBrains Mono',monospace;font-size:11px;min-width:38px;text-align:right}
+
+  .gap-pos{color:var(--green);font-family:'JetBrains Mono',monospace;font-size:12px}
+  .gap-neg{color:var(--red);font-family:'JetBrains Mono',monospace;font-size:12px}
+
+  .week-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px}
+  @media(max-width:900px){.week-grid{grid-template-columns:1fr}}
+  .week-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+  .week-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:14px}
+  .week-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .week-name{width:150px;font-size:11.5px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .week-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:3px}
+  .week-bar-fill{height:100%;border-radius:3px}
+  .week-val{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);min-width:75px;text-align:right}
+
+  .totals-row{background:var(--surface2)!important;font-weight:600}
+  footer{padding:20px 40px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);text-align:center}
+
+  @media(max-width:700px){header,.tabs,.panel{padding-left:18px;padding-right:18px}}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px}
+  .filter-group{display:flex;gap:6px;flex-wrap:wrap}
+  .filter-btn{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+  .filter-btn.active{color:var(--text);border-color:var(--accent);background:rgba(79,142,247,.12)}
+  .filter-btn.sp.active{border-color:var(--sp);background:rgba(124,106,255,.20);color:var(--sp);box-shadow:0 0 0 1px var(--sp)}
+  .filter-btn.poa.active{border-color:var(--poa);background:rgba(34,201,142,.20);color:var(--poa);box-shadow:0 0 0 1px var(--poa)}
+  .export-btn{padding:6px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s}
+  .export-btn:hover{background:var(--border)}
+</style>
+<script src="./Dashboard KPIs — Junho 2026_files/xlsx.full.min.js.download"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Dashboard de KPIs</h1>
+    <p id="last-update">Atualizado em 16/06/2026, 14:51:28 · 21 dias úteis no mês</p>
+  </div>
+  <div class="header-right">
+    <span class="badge badge-info" id="badge-dias">12 dias úteis restantes</span>
+    <span class="badge badge-warn" id="badge-pct">42.9% do mês concluído</span>
+    <span class="badge badge-ok" id="badge-proj">Projeção: R$ 3.676.655</span>
+    <button class="btn-refresh" onclick="loadAll()">
+      <span id="refresh-icon" class="">↻</span> Atualizar
+    </button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab active" data-tab="mensal" onclick="showTab(this,&#39;mensal&#39;)">Mensal</div>
+  <div class="tab" data-tab="clientes" onclick="showTab(this,&#39;clientes&#39;)">Clientes &amp; Orçamentos</div>
+  <div class="tab" data-tab="semanal" onclick="showTab(this,&#39;semanal&#39;)">Semanal</div>
+</nav>
+
+<div id="tab-mensal" class="panel active">
+  <div id="mensal-content">
+    <div class="toolbar">
+    <div class="filter-group">
+      <button class="filter-btn active" data-equipe="all" onclick="setFilter(&#39;all&#39;)">Todas as Equipes</button>
+      <button class="filter-btn sp" data-equipe="SP" onclick="setFilter(&#39;SP&#39;)">SP</button>
+      <button class="filter-btn poa" data-equipe="POA" onclick="setFilter(&#39;POA&#39;)">POA</button>
+    </div>
+    <button class="export-btn" onclick="exportCurrentTab()">⬇ Exportar Excel</button>
+  </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Meta Total</div><div class="kpi-value">R$ 4.090.000</div><div class="kpi-sub">16 vendedores</div></div>
+      <div class="kpi-card"><div class="kpi-label">Faturado</div><div class="kpi-value green">R$ 1.508.364,61</div><div class="kpi-sub">36.9% da meta</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ag. Faturar</div><div class="kpi-value amber">R$ 62.304,98</div><div class="kpi-sub">Não contabilizado</div></div>
+      <div class="kpi-card"><div class="kpi-label">Vendas Total</div><div class="kpi-value">R$ 1.575.709,18</div><div class="kpi-sub">Fat. + Ag. Faturar</div></div>
+      <div class="kpi-card"><div class="kpi-label">GAP da Meta</div><div class="kpi-value red">R$ 2.514.290,82</div><div class="kpi-sub">A fechar no mês</div></div>
+      <div class="kpi-card"><div class="kpi-label">Projeção</div><div class="kpi-value">R$ 3.676.654,75</div><div class="kpi-sub">Baseado em média/dia</div></div>
+      <div class="kpi-card"><div class="kpi-label">Média/Dia</div><div class="kpi-value">R$ 175.078,80</div><div class="kpi-sub">Dias úteis passados</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ag. Financeiro</div><div class="kpi-value amber">R$ 0,00</div><div class="kpi-sub">Não contabiliza</div></div>
+    </div>
+    <div class="section-title">Ranking de Vendedores — Desempenho vs Meta</div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>#</th><th>Vendedor</th><th>Equipe</th>
+        <th class="num">Meta</th><th class="num">Faturado</th><th class="num">Ag. Faturar</th>
+        <th class="num">Vendas Total</th><th style="min-width:130px">% da Meta</th>
+        <th>Status</th><th class="num">GAP</th><th class="num">Meta/Dia</th>
+      </tr></thead>
+      <tbody><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">1</td>
+      <td>VERIDIANA DE SOUZA AZEREDO</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 100.000,00</td>
+      <td class="num mono">R$ 290.541,51</td>
+      <td class="num mono">—</td>
+      <td class="num mono">R$ 290.541,51</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:100%;background:#22c98e"></div></div><span class="prog-label" style="color:#22c98e">290.5%</span></div></td>
+      <td><span class="status-badge status-ok"><span class="dot dot-green"></span>No Relógio</span></td>
+      <td class="num gap-pos">R$ 190.541,51</td>
+      <td class="num mono">R$ -15.878,46</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">2</td>
+      <td>GISELE PRIEBE PINHEIRO</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 700.000,00</td>
+      <td class="num mono">R$ 241.357,41</td>
+      <td class="num mono">—</td>
+      <td class="num mono">R$ 246.397,00</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:34.47963%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">34.5%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 453.603,00</td>
+      <td class="num mono">R$ 37.800,25</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">3</td>
+      <td>ANA CRISTINA WRUCH</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">R$ 540.000,00</td>
+      <td class="num mono">R$ 158.332,45</td>
+      <td class="num mono">R$ 11.491,59</td>
+      <td class="num mono">R$ 169.824,04</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:29.320824074074075%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">29.3%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 370.175,96</td>
+      <td class="num mono">R$ 30.848,00</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">4</td>
+      <td>WILLIAMS SANTOS DE ANDRADE</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 270.000,00</td>
+      <td class="num mono">R$ 132.095,33</td>
+      <td class="num mono">R$ 19.897,99</td>
+      <td class="num mono">R$ 151.993,32</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:48.92419629629628%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">48.9%</span></div></td>
+      <td><span class="status-badge status-ok"><span class="dot dot-green"></span>No Relógio</span></td>
+      <td class="num gap-neg">R$ 118.006,68</td>
+      <td class="num mono">R$ 9.833,89</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">5</td>
+      <td>JOSE ANTONIO OLIVEIRA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 550.000,00</td>
+      <td class="num mono">R$ 123.060,73</td>
+      <td class="num mono">R$ 20.594,49</td>
+      <td class="num mono">R$ 143.655,22</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:22.37467818181818%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">22.4%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 406.344,78</td>
+      <td class="num mono">R$ 33.862,07</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">6</td>
+      <td>VAGNER TAVARES KULZER</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 240.000,00</td>
+      <td class="num mono">R$ 113.904,80</td>
+      <td class="num mono">R$ 1.715,03</td>
+      <td class="num mono">R$ 115.619,83</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:47.46033333333332%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">47.5%</span></div></td>
+      <td><span class="status-badge status-ok"><span class="dot dot-green"></span>No Relógio</span></td>
+      <td class="num gap-neg">R$ 124.380,17</td>
+      <td class="num mono">R$ 10.365,01</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">7</td>
+      <td>VANESSA VIEGAS SCHLEMMER</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 400.000,00</td>
+      <td class="num mono">R$ 112.153,01</td>
+      <td class="num mono">R$ 870,52</td>
+      <td class="num mono">R$ 113.023,53</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:28.038252500000006%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">28.0%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 286.976,47</td>
+      <td class="num mono">R$ 23.914,71</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">8</td>
+      <td>FLAVIO MACHADO DOS REIS</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">R$ 420.000,00</td>
+      <td class="num mono">R$ 89.150,54</td>
+      <td class="num mono">R$ 4.296,88</td>
+      <td class="num mono">R$ 93.447,42</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:21.226319047619047%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">21.2%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 326.552,58</td>
+      <td class="num mono">R$ 27.212,72</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">9</td>
+      <td>ANASTÁZIA BERNARDINO MOREIRA</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">R$ 100.000,00</td>
+      <td class="num mono">R$ 71.219,87</td>
+      <td class="num mono">R$ 1.150,95</td>
+      <td class="num mono">R$ 72.370,82</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:71.21987000000003%;background:#22c98e"></div></div><span class="prog-label" style="color:#22c98e">71.2%</span></div></td>
+      <td><span class="status-badge status-ok"><span class="dot dot-green"></span>No Relógio</span></td>
+      <td class="num gap-neg">R$ 27.629,18</td>
+      <td class="num mono">R$ 2.302,43</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">10</td>
+      <td>NAIARA VAZ</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 280.000,00</td>
+      <td class="num mono">R$ 62.298,34</td>
+      <td class="num mono">R$ 2.287,53</td>
+      <td class="num mono">R$ 64.585,87</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:22.249407142857144%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">22.2%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 215.414,13</td>
+      <td class="num mono">R$ 17.951,18</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">11</td>
+      <td>JONATAN AZEVEDO DE SOUZA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 130.000,00</td>
+      <td class="num mono">R$ 48.288,66</td>
+      <td class="num mono">—</td>
+      <td class="num mono">R$ 48.288,66</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:37.14512307692308%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">37.1%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 81.711,34</td>
+      <td class="num mono">R$ 6.809,28</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">12</td>
+      <td>MATEUS OSTROWSKI</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 240.000,00</td>
+      <td class="num mono">R$ 43.098,35</td>
+      <td class="num mono">—</td>
+      <td class="num mono">R$ 43.098,35</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:17.957645833333334%;background:#f25f5c"></div></div><span class="prog-label" style="color:#f25f5c">18.0%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 196.901,65</td>
+      <td class="num mono">R$ 16.408,47</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">13</td>
+      <td>MIQUÉIAS DOS SANTOS DA GAMA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 20.000,00</td>
+      <td class="num mono">R$ 16.907,26</td>
+      <td class="num mono">—</td>
+      <td class="num mono">R$ 16.907,26</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:84.53629999999998%;background:#22c98e"></div></div><span class="prog-label" style="color:#22c98e">84.5%</span></div></td>
+      <td><span class="status-badge status-ok"><span class="dot dot-green"></span>No Relógio</span></td>
+      <td class="num gap-neg">R$ 3.092,74</td>
+      <td class="num mono">—</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">14</td>
+      <td>WILMA GERENTE</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">R$ 100.000,00</td>
+      <td class="num mono">R$ 4.723,03</td>
+      <td class="num mono">—</td>
+      <td class="num mono">R$ 4.723,03</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:4.72303%;background:#f25f5c"></div></div><span class="prog-label" style="color:#f25f5c">4.7%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+      <td class="num gap-neg">R$ 95.276,97</td>
+      <td class="num mono">R$ 7.939,75</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">15</td>
+      <td>MATHEUS ALMEIDA DE OLIVEIRA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 0,00</td>
+      <td class="num mono">R$ 1.233,32</td>
+      <td class="num mono">—</td>
+      <td class="num mono">R$ 1.233,32</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#f25f5c"></div></div><span class="prog-label" style="color:#f25f5c">0.0%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>—</span></td>
+      <td class="num gap-pos">R$ 1.233,32</td>
+      <td class="num mono">R$ -102,78</td>
+    </tr><tr>
+      <td style="font-family:&#39;JetBrains Mono&#39;,monospace;color:var(--muted)">16</td>
+      <td>DIEGO SAMPAIO</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">R$ 0,00</td>
+      <td class="num mono">R$ 0,00</td>
+      <td class="num mono">—</td>
+      <td class="num mono">R$ 0,00</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:0%;background:#f25f5c"></div></div><span class="prog-label" style="color:#f25f5c">0.0%</span></div></td>
+      <td><span class="status-badge status-out"><span class="dot dot-red"></span>—</span></td>
+      <td class="num gap-pos">R$ -0,00</td>
+      <td class="num mono">—</td>
+    </tr><tr class="totals-row">
+    <td colspan="3"><strong>TOTAIS</strong></td>
+    <td class="num mono"><strong>R$ 4.090.000,00</strong></td>
+    <td class="num mono"><strong>R$ 1.508.364,61</strong></td>
+    <td class="num mono"><strong>R$ 62.304,98</strong></td>
+    <td class="num mono"><strong>R$ 1.575.709,18</strong></td>
+    <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:36.8793303178484%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">36.9%</span></div></td>
+    <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+    <td class="num gap-neg"><strong>R$ 2.514.290,82</strong></td>
+    <td class="num mono">—</td>
+  </tr></tbody>
+    </table></div></div>
+</div>
+<div id="tab-clientes" class="panel">
+  <div id="clientes-content">
+    <div class="toolbar">
+    <div class="filter-group">
+      <button class="filter-btn active" data-equipe="all" onclick="setFilter(&#39;all&#39;)">Todas as Equipes</button>
+      <button class="filter-btn sp" data-equipe="SP" onclick="setFilter(&#39;SP&#39;)">SP</button>
+      <button class="filter-btn poa" data-equipe="POA" onclick="setFilter(&#39;POA&#39;)">POA</button>
+    </div>
+    <button class="export-btn" onclick="exportCurrentTab()">⬇ Exportar Excel</button>
+  </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Meta Clientes</div><div class="kpi-value">0</div></div>
+      <div class="kpi-card"><div class="kpi-label">Compraram</div><div class="kpi-value green">332</div></div>
+      <div class="kpi-card"><div class="kpi-label">GAP Clientes</div><div class="kpi-value red">-332</div></div>
+      <div class="kpi-card"><div class="kpi-label">Clientes Abertos</div><div class="kpi-value amber">0</div></div>
+      <div class="kpi-card"><div class="kpi-label">Com Orçamento</div><div class="kpi-value">620</div></div>
+      <div class="kpi-card"><div class="kpi-label">Qtd Orçamentos</div><div class="kpi-value">963</div></div>
+      <div class="kpi-card"><div class="kpi-label">Total Orçado/Mês</div><div class="kpi-value">R$ 3.548.209</div></div>
+      <div class="kpi-card"><div class="kpi-label">Conversão/Mês</div><div class="kpi-value amber">42.5%</div></div>
+    </div>
+    <div class="section-title">Detalhamento por Vendedor — Clientes &amp; Orçamentos</div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Vendedor</th><th>Equipe</th>
+        <th class="num">Meta Clientes</th><th class="num">Compraram</th><th class="num">GAP</th>
+        <th class="num">Abertos</th><th class="num">C/ Orçamento</th><th class="num">Qtd Orçam.</th>
+        <th class="num">Total Orçado</th><th class="num">Conversão</th>
+      </tr></thead>
+      <tbody><tr>
+      <td>VERIDIANA DE SOUZA AZEREDO</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">4</td>
+      <td class="num gap-neg">-4</td>
+      <td class="num mono">—</td>
+      <td class="num mono">7</td>
+      <td class="num mono">13</td>
+      <td class="num mono">R$ 325.596,83</td>
+      <td class="num mono">89.2%</td>
+    </tr><tr>
+      <td>GISELE PRIEBE PINHEIRO</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">40</td>
+      <td class="num gap-neg">-40</td>
+      <td class="num mono">—</td>
+      <td class="num mono">61</td>
+      <td class="num mono">94</td>
+      <td class="num mono">R$ 491.922,32</td>
+      <td class="num mono">50.1%</td>
+    </tr><tr>
+      <td>ANA CRISTINA WRUCH</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">32</td>
+      <td class="num gap-neg">-32</td>
+      <td class="num mono">—</td>
+      <td class="num mono">63</td>
+      <td class="num mono">111</td>
+      <td class="num mono">R$ 353.595,32</td>
+      <td class="num mono">48.0%</td>
+    </tr><tr>
+      <td>WILLIAMS SANTOS DE ANDRADE</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">24</td>
+      <td class="num gap-neg">-24</td>
+      <td class="num mono">—</td>
+      <td class="num mono">50</td>
+      <td class="num mono">62</td>
+      <td class="num mono">R$ 228.993,78</td>
+      <td class="num mono">66.4%</td>
+    </tr><tr>
+      <td>JOSE ANTONIO OLIVEIRA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">20</td>
+      <td class="num gap-neg">-20</td>
+      <td class="num mono">—</td>
+      <td class="num mono">29</td>
+      <td class="num mono">51</td>
+      <td class="num mono">R$ 337.228,38</td>
+      <td class="num mono">42.6%</td>
+    </tr><tr>
+      <td>VAGNER TAVARES KULZER</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">44</td>
+      <td class="num gap-neg">-44</td>
+      <td class="num mono">—</td>
+      <td class="num mono">72</td>
+      <td class="num mono">127</td>
+      <td class="num mono">R$ 228.546,39</td>
+      <td class="num mono">50.6%</td>
+    </tr><tr>
+      <td>VANESSA VIEGAS SCHLEMMER</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">40</td>
+      <td class="num gap-neg">-40</td>
+      <td class="num mono">—</td>
+      <td class="num mono">67</td>
+      <td class="num mono">107</td>
+      <td class="num mono">R$ 284.104,08</td>
+      <td class="num mono">39.8%</td>
+    </tr><tr>
+      <td>FLAVIO MACHADO DOS REIS</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">25</td>
+      <td class="num gap-neg">-25</td>
+      <td class="num mono">—</td>
+      <td class="num mono">51</td>
+      <td class="num mono">74</td>
+      <td class="num mono">R$ 303.300,98</td>
+      <td class="num mono">30.8%</td>
+    </tr><tr>
+      <td>ANASTÁZIA BERNARDINO MOREIRA</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">35</td>
+      <td class="num gap-neg">-35</td>
+      <td class="num mono">—</td>
+      <td class="num mono">71</td>
+      <td class="num mono">97</td>
+      <td class="num mono">R$ 269.174,33</td>
+      <td class="num mono">26.9%</td>
+    </tr><tr>
+      <td>NAIARA VAZ</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">16</td>
+      <td class="num gap-neg">-16</td>
+      <td class="num mono">—</td>
+      <td class="num mono">41</td>
+      <td class="num mono">62</td>
+      <td class="num mono">R$ 211.045,81</td>
+      <td class="num mono">30.6%</td>
+    </tr><tr>
+      <td>JONATAN AZEVEDO DE SOUZA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">24</td>
+      <td class="num gap-neg">-24</td>
+      <td class="num mono">—</td>
+      <td class="num mono">48</td>
+      <td class="num mono">65</td>
+      <td class="num mono">R$ 225.020,70</td>
+      <td class="num mono">21.5%</td>
+    </tr><tr>
+      <td>MATEUS OSTROWSKI</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">16</td>
+      <td class="num gap-neg">-16</td>
+      <td class="num mono">—</td>
+      <td class="num mono">29</td>
+      <td class="num mono">39</td>
+      <td class="num mono">R$ 90.766,24</td>
+      <td class="num mono">47.5%</td>
+    </tr><tr>
+      <td>MIQUÉIAS DOS SANTOS DA GAMA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">9</td>
+      <td class="num gap-neg">-9</td>
+      <td class="num mono">—</td>
+      <td class="num mono">17</td>
+      <td class="num mono">38</td>
+      <td class="num mono">R$ 59.305,78</td>
+      <td class="num mono">28.5%</td>
+    </tr><tr>
+      <td>WILMA GERENTE</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">2</td>
+      <td class="num gap-neg">-2</td>
+      <td class="num mono">—</td>
+      <td class="num mono">4</td>
+      <td class="num mono">9</td>
+      <td class="num mono">R$ 68.805,88</td>
+      <td class="num mono">6.9%</td>
+    </tr><tr>
+      <td>MATHEUS ALMEIDA DE OLIVEIRA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">1</td>
+      <td class="num gap-neg">-1</td>
+      <td class="num mono">—</td>
+      <td class="num mono">1</td>
+      <td class="num mono">2</td>
+      <td class="num mono">R$ 41.437,94</td>
+      <td class="num mono">3.0%</td>
+    </tr><tr>
+      <td>DIEGO SAMPAIO</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">—</td>
+      <td class="num mono">0</td>
+      <td class="num gap-pos">—</td>
+      <td class="num mono">—</td>
+      <td class="num mono">9</td>
+      <td class="num mono">12</td>
+      <td class="num mono">R$ 29.364,05</td>
+      <td class="num mono">—</td>
+    </tr><tr class="totals-row">
+    <td colspan="2"><strong>TOTAIS</strong></td>
+    <td class="num mono"><strong>0</strong></td>
+    <td class="num mono"><strong>332</strong></td>
+    <td class="num gap-neg"><strong>-332</strong></td>
+    <td class="num mono"><strong>0</strong></td>
+    <td class="num mono"><strong>620</strong></td>
+    <td class="num mono"><strong>963</strong></td>
+    <td class="num mono"><strong>R$ 3.548.208,81</strong></td>
+    <td class="num mono"><strong>42.5%</strong></td>
+  </tr></tbody>
+    </table></div></div>
+</div>
+<div id="tab-semanal" class="panel">
+  <div id="semanal-content">
+    <div class="toolbar">
+    <div class="filter-group">
+      <button class="filter-btn active" data-equipe="all" onclick="setFilter(&#39;all&#39;)">Todas as Equipes</button>
+      <button class="filter-btn sp" data-equipe="SP" onclick="setFilter(&#39;SP&#39;)">SP</button>
+      <button class="filter-btn poa" data-equipe="POA" onclick="setFilter(&#39;POA&#39;)">POA</button>
+    </div>
+    <button class="export-btn" onclick="exportCurrentTab()">⬇ Exportar Excel</button>
+  </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))"><div class="kpi-card"><div class="kpi-label">1ª Semana</div><div class="kpi-value green">R$ 440.834,09</div><div class="kpi-sub">Total realizado</div></div><div class="kpi-card"><div class="kpi-label">2ª Semana</div><div class="kpi-value green">R$ 2.401.180,98</div><div class="kpi-sub">Total realizado</div></div><div class="kpi-card"><div class="kpi-label">3ª Semana</div><div class="kpi-value red">R$ 0</div><div class="kpi-sub">Sem dados</div></div><div class="kpi-card"><div class="kpi-label">4ª Semana</div><div class="kpi-value red">R$ 0</div><div class="kpi-sub">Sem dados</div></div></div>
+    <div class="week-grid">
+      <div class="week-card"><div class="week-card-title">1ª Semana — por vendedor</div><div class="week-row">
+          <span class="week-name" title="ANA CRISTINA WRUCH">ANA CRISTINA</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:100.0%;background:#7c6aff"></div></div>
+          <span class="week-val">67.296,99</span>
+        </div><div class="week-row">
+          <span class="week-name" title="GISELE PRIEBE PINHEIRO">GISELE PRIEBE</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:84.7%;background:#22c98e"></div></div>
+          <span class="week-val">57.022,20</span>
+        </div><div class="week-row">
+          <span class="week-name" title="JOSE ANTONIO OLIVEIRA">JOSE ANTONIO</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:82.7%;background:#f5a623"></div></div>
+          <span class="week-val">55.676,43</span>
+        </div><div class="week-row">
+          <span class="week-name" title="WILLIAMS SANTOS DE ANDRADE">WILLIAMS SANTOS</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:75.1%;background:#22c98e"></div></div>
+          <span class="week-val">50.544,99</span>
+        </div><div class="week-row">
+          <span class="week-name" title="VAGNER TAVARES KULZER">VAGNER TAVARES</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:72.8%;background:#22c98e"></div></div>
+          <span class="week-val">48.972,10</span>
+        </div><div class="week-row">
+          <span class="week-name" title="ANASTÁZIA BERNARDINO MOREIRA">ANASTÁZIA BERNARDINO</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:71.4%;background:#7c6aff"></div></div>
+          <span class="week-val">48.032,60</span>
+        </div><div class="week-row">
+          <span class="week-name" title="FLAVIO MACHADO DOS REIS">FLAVIO MACHADO</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:42.4%;background:#7c6aff"></div></div>
+          <span class="week-val">28.554,21</span>
+        </div><div class="week-row">
+          <span class="week-name" title="VANESSA VIEGAS SCHLEMMER">VANESSA VIEGAS</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:40.8%;background:#22c98e"></div></div>
+          <span class="week-val">27.456,88</span>
+        </div><div class="week-row">
+          <span class="week-name" title="NAIARA VAZ">NAIARA VAZ</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:30.9%;background:#f5a623"></div></div>
+          <span class="week-val">20.803,68</span>
+        </div><div class="week-row">
+          <span class="week-name" title="JONATAN AZEVEDO DE SOUZA">JONATAN AZEVEDO</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:27.2%;background:#22c98e"></div></div>
+          <span class="week-val">18.296,52</span>
+        </div><div class="week-row">
+          <span class="week-name" title="MIQUÉIAS DOS SANTOS DA GAMA">MIQUÉIAS DOS</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:16.5%;background:#f5a623"></div></div>
+          <span class="week-val">11.120,45</span>
+        </div><div class="week-row">
+          <span class="week-name" title="MATEUS OSTROWSKI">MATEUS OSTROWSKI</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:8.7%;background:#f5a623"></div></div>
+          <span class="week-val">5.823,72</span>
+        </div><div class="week-row">
+          <span class="week-name" title="MATHEUS ALMEIDA DE OLIVEIRA">MATHEUS ALMEIDA</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:1.8%;background:#f5a623"></div></div>
+          <span class="week-val">1.233,32</span>
+        </div></div>
+      <div class="week-card"><div class="week-card-title">2ª Semana — por vendedor</div><div class="week-row">
+          <span class="week-name" title="VERIDIANA DE SOUZA AZEREDO">VERIDIANA DE</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:100.0%;background:#22c98e"></div></div>
+          <span class="week-val">581.083,02</span>
+        </div><div class="week-row">
+          <span class="week-name" title="GISELE PRIEBE PINHEIRO">GISELE PRIEBE</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:66.7%;background:#22c98e"></div></div>
+          <span class="week-val">387.708,44</span>
+        </div><div class="week-row">
+          <span class="week-name" title="ANA CRISTINA WRUCH">ANA CRISTINA</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:38.0%;background:#7c6aff"></div></div>
+          <span class="week-val">220.730,14</span>
+        </div><div class="week-row">
+          <span class="week-name" title="WILLIAMS SANTOS DE ANDRADE">WILLIAMS SANTOS</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:35.9%;background:#22c98e"></div></div>
+          <span class="week-val">208.562,89</span>
+        </div><div class="week-row">
+          <span class="week-name" title="VANESSA VIEGAS SCHLEMMER">VANESSA VIEGAS</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:28.8%;background:#22c98e"></div></div>
+          <span class="week-val">167.322,01</span>
+        </div><div class="week-row">
+          <span class="week-name" title="VAGNER TAVARES KULZER">VAGNER TAVARES</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:28.8%;background:#22c98e"></div></div>
+          <span class="week-val">167.159,37</span>
+        </div><div class="week-row">
+          <span class="week-name" title="JOSE ANTONIO OLIVEIRA">JOSE ANTONIO</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:27.8%;background:#f5a623"></div></div>
+          <span class="week-val">161.699,24</span>
+        </div><div class="week-row">
+          <span class="week-name" title="FLAVIO MACHADO DOS REIS">FLAVIO MACHADO</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:24.9%;background:#7c6aff"></div></div>
+          <span class="week-val">144.955,15</span>
+        </div><div class="week-row">
+          <span class="week-name" title="ANASTÁZIA BERNARDINO MOREIRA">ANASTÁZIA BERNARDINO</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:15.9%;background:#7c6aff"></div></div>
+          <span class="week-val">92.601,75</span>
+        </div><div class="week-row">
+          <span class="week-name" title="NAIARA VAZ">NAIARA VAZ</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:15.6%;background:#f5a623"></div></div>
+          <span class="week-val">90.489,19</span>
+        </div><div class="week-row">
+          <span class="week-name" title="MATEUS OSTROWSKI">MATEUS OSTROWSKI</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:13.4%;background:#f5a623"></div></div>
+          <span class="week-val">77.793,40</span>
+        </div><div class="week-row">
+          <span class="week-name" title="JONATAN AZEVEDO DE SOUZA">JONATAN AZEVEDO</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:11.8%;background:#22c98e"></div></div>
+          <span class="week-val">68.836,80</span>
+        </div><div class="week-row">
+          <span class="week-name" title="MIQUÉIAS DOS SANTOS DA GAMA">MIQUÉIAS DOS</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:3.7%;background:#f5a623"></div></div>
+          <span class="week-val">21.560,20</span>
+        </div><div class="week-row">
+          <span class="week-name" title="WILMA GERENTE">WILMA GERENTE</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:1.6%;background:#7c6aff"></div></div>
+          <span class="week-val">9.446,06</span>
+        </div><div class="week-row">
+          <span class="week-name" title="MATHEUS ALMEIDA DE OLIVEIRA">MATHEUS ALMEIDA</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:0.2%;background:#f5a623"></div></div>
+          <span class="week-val">1.233,32</span>
+        </div></div>
+    </div>
+    <div class="section-title">Detalhe Semanal Completo</div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Vendedor</th><th>Equipe</th>
+        <th class="num">1ª Semana</th><th class="num">2ª Semana</th>
+        <th class="num">3ª Semana</th><th class="num">4ª Semana</th>
+        <th class="num">Total</th>
+      </tr></thead>
+      <tbody><tr>
+      <td>VERIDIANA DE SOUZA AZEREDO</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono" style="color:var(--muted)">—</td><td class="num mono">R$ 581.083,02</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 581.083,02</strong></td>
+    </tr><tr>
+      <td>GISELE PRIEBE PINHEIRO</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 57.022,20</td><td class="num mono">R$ 387.708,44</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 444.730,64</strong></td>
+    </tr><tr>
+      <td>ANA CRISTINA WRUCH</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">R$ 67.296,99</td><td class="num mono">R$ 220.730,14</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 288.027,13</strong></td>
+    </tr><tr>
+      <td>WILLIAMS SANTOS DE ANDRADE</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 50.544,99</td><td class="num mono">R$ 208.562,89</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 259.107,88</strong></td>
+    </tr><tr>
+      <td>JOSE ANTONIO OLIVEIRA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 55.676,43</td><td class="num mono">R$ 161.699,24</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 217.375,67</strong></td>
+    </tr><tr>
+      <td>VAGNER TAVARES KULZER</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 48.972,10</td><td class="num mono">R$ 167.159,37</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 216.131,47</strong></td>
+    </tr><tr>
+      <td>VANESSA VIEGAS SCHLEMMER</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 27.456,88</td><td class="num mono">R$ 167.322,01</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 194.778,89</strong></td>
+    </tr><tr>
+      <td>FLAVIO MACHADO DOS REIS</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">R$ 28.554,21</td><td class="num mono">R$ 144.955,15</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 173.509,36</strong></td>
+    </tr><tr>
+      <td>ANASTÁZIA BERNARDINO MOREIRA</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono">R$ 48.032,60</td><td class="num mono">R$ 92.601,75</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 140.634,35</strong></td>
+    </tr><tr>
+      <td>NAIARA VAZ</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 20.803,68</td><td class="num mono">R$ 90.489,19</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 111.292,87</strong></td>
+    </tr><tr>
+      <td>JONATAN AZEVEDO DE SOUZA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 18.296,52</td><td class="num mono">R$ 68.836,80</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 87.133,32</strong></td>
+    </tr><tr>
+      <td>MATEUS OSTROWSKI</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 5.823,72</td><td class="num mono">R$ 77.793,40</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 83.617,12</strong></td>
+    </tr><tr>
+      <td>MIQUÉIAS DOS SANTOS DA GAMA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 11.120,45</td><td class="num mono">R$ 21.560,20</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 32.680,65</strong></td>
+    </tr><tr>
+      <td>WILMA GERENTE</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono" style="color:var(--muted)">—</td><td class="num mono">R$ 9.446,06</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 9.446,06</strong></td>
+    </tr><tr>
+      <td>MATHEUS ALMEIDA DE OLIVEIRA</td>
+      <td><span class="team-badge team-poa">POA</span></td>
+      <td class="num mono">R$ 1.233,32</td><td class="num mono">R$ 1.233,32</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>R$ 2.466,64</strong></td>
+    </tr><tr>
+      <td>DIEGO SAMPAIO</td>
+      <td><span class="team-badge team-sp">SP</span></td>
+      <td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td><td class="num mono" style="color:var(--muted)">—</td>
+      <td class="num mono"><strong>—</strong></td>
+    </tr><tr class="totals-row">
+    <td colspan="2"><strong>TOTAL GERAL</strong></td>
+    <td class="num mono"><strong>R$ 440.834,09</strong></td><td class="num mono"><strong>R$ 2.401.180,98</strong></td><td class="num mono"><strong>—</strong></td><td class="num mono"><strong>—</strong></td>
+    <td class="num mono"><strong>R$ 2.842.015,07</strong></td>
+  </tr></tbody>
+    </table></div></div>
+</div>
+
+<footer id="footer-info">Dashboard KPIs · Atualizado em 16/06/2026, 14:51:28 · Uso exclusivo diretoria</footer>
+
+<script>
+const SHEET_ID = '1LVypMf3e4TGDtcYa7p9z6Po3Ku3ZDCjSbMVh6V14xcA';
+
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyO9r0PY9riCRYGK47pThgP76N7AGe8X4IaM1smdvJt4-8i_aZxokUcZRGAInIFq0rtXw/exec';
+function csvUrl(sheet) {
+  return `${APPS_SCRIPT_URL}?sheet=${encodeURIComponent(sheet)}`;
+}
+
+async function fetchCSV(sheet, attempt=1) {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(csvUrl(sheet), { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`Erro ao buscar aba "${sheet}": ${res.status}`);
+    return res.text();
+  } catch(e) {
+    if (attempt < 3) {
+      await new Promise(r => setTimeout(r, 2000));
+      return fetchCSV(sheet, attempt + 1);
+    }
+    throw e;
+  }
+}
+
+function parseCSV(text) {
+  return text.split('\n').map(line => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
+
+function num(v) {
+  if (!v || v === '' || v === '—') return null;
+  return parseFloat(v.replace(/[^\d.\-]/g, '')) || 0;
+}
+
+function fmt(n, decimals=2) {
+  if (n == null) return '—';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+}
+function fmtN(n) {
+  if (n == null) return '—';
+  return n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function pct(n) {
+  if (n == null || isNaN(n)) return '—';
+  return (n*100).toFixed(1)+'%';
+}
+function teamBadge(t) {
+  const cls = t ? t.toLowerCase() : '';
+  return `<span class="team-badge team-${cls}">${t||'—'}</span>`;
+}
+
+function parseMensal(rows) {
+  // Top info: col C (index 2) = label, col D (index 3) = value
+  // Row 0=Dias Uteis, 1=Data, 2=Data Final, 3=Dias Restantes, 4=% Passado, 5=Media Dias, 6=Projecao
+  let diasUteis=21, diasRestantes=0, pctPassado=0, mediaDias=0, projecao=0;
+
+  function parseVal(v) {
+    if (!v && v !== 0) return null;
+    const s = v.toString().replace('%','').replace('R$','').replace(/\s/g,'').replace(',','.').trim();
+    return parseFloat(s) || 0;
+  }
+
+  // Read fixed rows by index (from CSV output):
+  // row 0: Dias Úteis       -> col 3
+  // row 1: Data             -> skip
+  // row 2: Data Final       -> skip
+  // row 3: Dias Restantes   -> col 3
+  // row 4: % Dias Passados  -> col 3 (decimal 0.333)
+  // row 5: Média Dias       -> col 3
+  // row 6: Projeção         -> col 3
+  if (rows[0]) diasUteis     = parseVal(rows[0][3]) || 21;
+  if (rows[3]) diasRestantes = parseVal(rows[3][3]) || 0;
+  if (rows[4]) pctPassado    = parseVal(rows[4][3]) || 0;
+  if (rows[5]) mediaDias     = parseVal(rows[5][3]) || 0;
+  if (rows[6]) projecao      = parseVal(rows[6][3]) || 0;
+
+  // Find header row (contains "Vendedor")
+  let headerIdx = 9;
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = 0; j < rows[i].length; j++) {
+      if ((rows[i][j]||'').toString().toLowerCase().includes('vendedor')) { headerIdx = i; break; }
+    }
+  }
+
+  const headers = rows[headerIdx];
+  const colIdx = {};
+  headers.forEach((h,i) => { if(h) colIdx[h.toString().trim().toUpperCase()] = i; });
+
+  const sellers = [];
+  for (let i = headerIdx+1; i < rows.length; i++) {
+    const r = rows[i];
+    const vendedor = r[2] ? r[2].toString().trim() : '';
+    if (!vendedor || vendedor.toLowerCase().startsWith('totai')) {
+      if (vendedor.toLowerCase().startsWith('totai')) {
+        // totals row
+        sellers._totals = r;
+      }
+      continue;
+    }
+    sellers.push({
+      rank:    num(r[0]),
+      equipe:  r[1] ? r[1].toString().trim() : '',
+      nome:    vendedor,
+      meta:    num(r[3]),
+      fat:     num(r[4]),
+      agFin:   num(r[5]),
+      va:      num(r[6]),
+      agFat:   num(r[7]),
+      total:   num(r[8]),
+      icm:     num(r[9]),
+      status:  r[10] ? r[10].toString().trim() : '',
+      gap:     num(r[11]),
+      metaCliente: num(r[12]),
+      comprou: num(r[13]),
+      gapC:    num(r[14]),
+      aberto:  num(r[15]),
+      comOrc:  num(r[16]),
+      qtdOrc:  num(r[17]),
+      totalOrc:num(r[18]),
+      conv:    num(r[19]),
+      metaDia: num(r[20]),
+    });
+  }
+
+  return { diasUteis, diasRestantes, pctPassado, mediaDias, projecao, sellers };
+}
+
+function parseSemanal(rows) {
+  // Layout: W1 cols A-H (0-7), W2 cols J-Q (9-16) on same rows
+  //         W3 cols A-H (0-7), W4 cols J-Q (9-16) on lower rows
+  // Header row has "Equipe" in col 0 or 9
+  // Seller rows follow, last col of block = weekly total
+  // "Total Geral" row has the grand total for the week
+
+  const weeks = [];
+
+  // Find all header rows (rows where col 0 OR col 9 = "Equipe")
+  const headerRows = [];
+  for (let i = 0; i < rows.length; i++) {
+    const left  = (rows[i][0]||'').toString().trim();
+    const right = (rows[i][9]||'').toString().trim();
+    if (left === 'Equipe')  headerRows.push({ row: i, col: 0,  totalCol: 7  });
+    if (right === 'Equipe') headerRows.push({ row: i, col: 9,  totalCol: 16 });
+  }
+  headerRows.sort((a,b) => a.row - b.row || a.col - b.col);
+
+  headerRows.forEach(h => {
+    const week = { sellers: [], total: 0 };
+    for (let i = h.row + 1; i < rows.length; i++) {
+      const r = rows[i];
+      const equipe = (r[h.col]   ||'').toString().trim();
+      const nome   = (r[h.col+1] ||'').toString().trim();
+
+      // Stop if we hit another header block
+      if (equipe === 'Equipe') break;
+
+      // Total Geral row
+      if (nome.toLowerCase().includes('total') || equipe.toLowerCase().includes('total')) {
+        week.total = parseFloat((r[h.totalCol]||'0').toString().replace(/[^0-9.,\-]/g,'').replace(',','.')) || 0;
+        break;
+      }
+
+      if (!nome || nome === 'Vendedor') continue;
+
+      const totalVal = parseFloat((r[h.totalCol]||'0').toString().replace(/[^0-9.,\-]/g,'').replace(',','.')) || 0;
+      week.sellers.push({ equipe, nome, total: totalVal });
+    }
+    weeks.push(week);
+  });
+
+  return weeks;
+}
+
+let activeFilter = 'all';
+
+function setFilter(equipe) {
+  activeFilter = equipe;
+  if (window._lastMensalData) {
+    renderMensal(window._lastMensalData);
+    renderClientes(window._lastMensalData.sellers);
+  }
+  if (window._lastWeeks) renderSemanal(window._lastWeeks, window._lastMensalData ? window._lastMensalData.sellers : []);
+  // Re-apply active state AFTER re-render (toolbarHTML rebuilds buttons)
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.equipe === equipe);
+  });
+}
+
+function filterSellers(sellers) {
+  const filtered = sellers.filter(s => s.equipe === 'SP' || s.equipe === 'POA');
+  if (activeFilter === 'all') return filtered;
+  return filtered.filter(s => s.equipe === activeFilter);
+}
+
+function exportXLSX(headers, rows, filename) {
+  const wb = XLSX.utils.book_new();
+  const wsData = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = headers.map((h, i) => ({ wch: Math.max(h.length + 2, ...rows.map(r => String(r[i]||'').length), 14) }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+  XLSX.writeFile(wb, filename);
+}
+
+function toolbarHTML() {
+  return `<div class="toolbar">
+    <div class="filter-group">
+      <button class="filter-btn active" data-equipe="all" onclick="setFilter('all')">Todas as Equipes</button>
+      <button class="filter-btn sp" data-equipe="SP" onclick="setFilter('SP')">SP</button>
+      <button class="filter-btn poa" data-equipe="POA" onclick="setFilter('POA')">POA</button>
+    </div>
+    <button class="export-btn" onclick="exportCurrentTab()">⬇ Exportar Excel</button>
+  </div>`;
+}
+
+function exportCurrentTab() {
+  const activeTab = document.querySelector('.tab.active').dataset.tab;
+  const sellers = window._lastMensalData ? filterSellers(window._lastMensalData.sellers) : [];
+  if (activeTab === 'mensal') {
+    exportXLSX(
+      ['#','Vendedor','Equipe','Meta','Faturado','Ag. Faturar','Vendas Total','% Meta','Status','GAP','Meta/Dia'],
+      sellers.sort((a,b)=>(b.fat||0)-(a.fat||0)).map((d,i) => [
+        i+1, d.nome, d.equipe,
+        d.meta||0, d.fat||0, d.agFat||0, d.total||0,
+        +((d.meta>0?d.fat/d.meta:0)*100).toFixed(1),
+        d.status||'', d.gap||0, d.metaDia||0
+      ]),
+      'kpis_mensal.xlsx'
+    );
+  } else if (activeTab === 'clientes') {
+    exportXLSX(
+      ['Vendedor','Equipe','Meta Clientes','Compraram','GAP','Abertos','C/ Orçamento','Qtd Orçamentos','Total Orçado','Conversão %'],
+      sellers.sort((a,b)=>(b.fat||0)-(a.fat||0)).map(d => [
+        d.nome, d.equipe,
+        d.metaCliente||0, d.comprou||0, d.gapC||0, d.aberto||0,
+        d.comOrc||0, d.qtdOrc||0, d.totalOrc||0,
+        +((d.conv||0)*100).toFixed(1)
+      ]),
+      'kpis_clientes.xlsx'
+    );
+  } else if (activeTab === 'semanal') {
+    const weeks = window._lastWeeks || [];
+    exportXLSX(
+      ['Vendedor','Equipe','1ª Semana','2ª Semana','3ª Semana','4ª Semana','Total'],
+      sellers.sort((a,b)=>(b.fat||0)-(a.fat||0)).map(s => {
+        const wv = weeks.map(w => { const f = w.sellers.find(d=>d.nome===s.nome); return f?f.total:0; });
+        while(wv.length<4) wv.push(0);
+        return [s.nome, s.equipe, ...wv, wv.reduce((a,b)=>a+b,0)];
+      }),
+      'kpis_semanal.xlsx'
+    );
+  }
+}
+
+function renderMensal(data) {
+  window._lastMensalData = data;
+  const { diasUteis, diasRestantes, pctPassado, mediaDias, projecao, sellers } = data;
+
+  // Update header badges
+  document.getElementById('badge-dias').textContent = `${diasRestantes} dias úteis restantes`;
+  document.getElementById('badge-pct').textContent  = `${pct(pctPassado)} do mês concluído`;
+  document.getElementById('badge-proj').textContent = `Projeção: ${fmt(projecao,0)}`;
+
+  const totalMeta = sellers.reduce((s,d)=>s+(d.meta||0),0);
+  const totalFat  = sellers.reduce((s,d)=>s+(d.fat||0),0);
+  const totalAgFat= sellers.reduce((s,d)=>s+(d.agFat||0),0);
+  const totalTot  = sellers.reduce((s,d)=>s+(d.total||0),0);
+  const totalGap  = sellers.reduce((s,d)=>s+(d.gap||0),0);
+  const totalAgFin= sellers.reduce((s,d)=>s+(d.agFin||0),0);
+
+  const sorted = [...filterSellers(sellers)].sort((a,b)=>(b.fat||0)-(a.fat||0));
+
+  let rows = '';
+  sorted.forEach((d,i) => {
+    const icmPct = (d.meta||0) > 0 ? (d.fat||0)/(d.meta||1) : 0;
+    const barW   = Math.min(icmPct,1)*100;
+    const barColor = icmPct>=0.5?'#22c98e':icmPct>=0.2?'#f5a623':'#f25f5c';
+    const statusCls = d.status==='No Relógio'?'status-ok':'status-out';
+    const dotCls    = d.status==='No Relógio'?'dot-green':'dot-red';
+    const gapVal = d.gap||0;
+    const gapCls = gapVal<=0?'gap-pos':'gap-neg';
+    const gapTxt = gapVal<=0 ? fmt(-gapVal) : fmt(gapVal);
+    rows += `<tr>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">${i+1}</td>
+      <td>${d.nome}</td>
+      <td>${teamBadge(d.equipe)}</td>
+      <td class="num mono">${fmt(d.meta)}</td>
+      <td class="num mono">${fmt(d.fat)}</td>
+      <td class="num mono">${d.agFat?fmt(d.agFat):'—'}</td>
+      <td class="num mono">${fmt(d.total)}</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${barW}%;background:${barColor}"></div></div><span class="prog-label" style="color:${barColor}">${pct(icmPct)}</span></div></td>
+      <td><span class="status-badge ${statusCls}"><span class="dot ${dotCls}"></span>${d.status||'—'}</span></td>
+      <td class="num ${gapCls}">${gapTxt}</td>
+      <td class="num mono">${d.metaDia!=null?fmt(d.metaDia):'—'}</td>
+    </tr>`;
+  });
+
+  const icmTotal = totalMeta>0?totalFat/totalMeta:0;
+  rows += `<tr class="totals-row">
+    <td colspan="3"><strong>TOTAIS</strong></td>
+    <td class="num mono"><strong>${fmt(totalMeta)}</strong></td>
+    <td class="num mono"><strong>${fmt(totalFat)}</strong></td>
+    <td class="num mono"><strong>${fmt(totalAgFat)}</strong></td>
+    <td class="num mono"><strong>${fmt(totalTot)}</strong></td>
+    <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${Math.min(icmTotal,1)*100}%;background:#f5a623"></div></div><span class="prog-label" style="color:#f5a623">${pct(icmTotal)}</span></div></td>
+    <td><span class="status-badge status-out"><span class="dot dot-red"></span>Fora do Relógio</span></td>
+    <td class="num gap-neg"><strong>${fmt(totalGap)}</strong></td>
+    <td class="num mono">—</td>
+  </tr>`;
+
+  document.getElementById('mensal-content').innerHTML = `
+    ${toolbarHTML()}
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Meta Total</div><div class="kpi-value">${fmt(totalMeta,0)}</div><div class="kpi-sub">${sellers.length} vendedores</div></div>
+      <div class="kpi-card"><div class="kpi-label">Faturado</div><div class="kpi-value green">${fmt(totalFat)}</div><div class="kpi-sub">${pct(icmTotal)} da meta</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ag. Faturar</div><div class="kpi-value amber">${fmt(totalAgFat)}</div><div class="kpi-sub">Não contabilizado</div></div>
+      <div class="kpi-card"><div class="kpi-label">Vendas Total</div><div class="kpi-value">${fmt(totalTot)}</div><div class="kpi-sub">Fat. + Ag. Faturar</div></div>
+      <div class="kpi-card"><div class="kpi-label">GAP da Meta</div><div class="kpi-value red">${fmt(Math.abs(totalGap))}</div><div class="kpi-sub">A fechar no mês</div></div>
+      <div class="kpi-card"><div class="kpi-label">Projeção</div><div class="kpi-value">${fmt(projecao)}</div><div class="kpi-sub">Baseado em média/dia</div></div>
+      <div class="kpi-card"><div class="kpi-label">Média/Dia</div><div class="kpi-value">${fmt(mediaDias)}</div><div class="kpi-sub">Dias úteis passados</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ag. Financeiro</div><div class="kpi-value amber">${fmt(totalAgFin)}</div><div class="kpi-sub">Não contabiliza</div></div>
+    </div>
+    <div class="section-title">Ranking de Vendedores — Desempenho vs Meta</div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>#</th><th>Vendedor</th><th>Equipe</th>
+        <th class="num">Meta</th><th class="num">Faturado</th><th class="num">Ag. Faturar</th>
+        <th class="num">Vendas Total</th><th style="min-width:130px">% da Meta</th>
+        <th>Status</th><th class="num">GAP</th><th class="num">Meta/Dia</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+function renderClientes(sellers) {
+  const totalMetaC = sellers.reduce((s,d)=>s+(d.metaCliente||0),0);
+  const totalComp  = sellers.reduce((s,d)=>s+(d.comprou||0),0);
+  const totalGapC  = sellers.reduce((s,d)=>s+(d.gapC||0),0);
+  const totalAb    = sellers.reduce((s,d)=>s+(d.aberto||0),0);
+  const totalOrcC  = sellers.reduce((s,d)=>s+(d.comOrc||0),0);
+  const totalQtd   = sellers.reduce((s,d)=>s+(d.qtdOrc||0),0);
+  const totalTotO  = sellers.reduce((s,d)=>s+(d.totalOrc||0),0);
+  const avgConv    = totalTotO>0 ? sellers.reduce((s,d)=>s+(d.fat||0),0)/totalTotO : 0;
+
+  const sorted = [...filterSellers(sellers)].sort((a,b)=>(b.fat||0)-(a.fat||0));
+  let rows = '';
+  sorted.forEach(d => {
+    const gcls = (d.gapC||0)>=0?'gap-pos':'gap-neg';
+    rows += `<tr>
+      <td>${d.nome}</td>
+      <td>${teamBadge(d.equipe)}</td>
+      <td class="num mono">${d.metaCliente??'—'}</td>
+      <td class="num mono">${d.comprou??'—'}</td>
+      <td class="num ${gcls}">${d.gapC!=null?(d.gapC>=0?'+':'')+d.gapC:'—'}</td>
+      <td class="num mono">${d.aberto??'—'}</td>
+      <td class="num mono">${d.comOrc??'—'}</td>
+      <td class="num mono">${d.qtdOrc??'—'}</td>
+      <td class="num mono">${fmt(d.totalOrc)}</td>
+      <td class="num mono">${pct(d.conv)}</td>
+    </tr>`;
+  });
+  rows += `<tr class="totals-row">
+    <td colspan="2"><strong>TOTAIS</strong></td>
+    <td class="num mono"><strong>${totalMetaC}</strong></td>
+    <td class="num mono"><strong>${totalComp}</strong></td>
+    <td class="num gap-neg"><strong>${totalGapC}</strong></td>
+    <td class="num mono"><strong>${totalAb}</strong></td>
+    <td class="num mono"><strong>${totalOrcC}</strong></td>
+    <td class="num mono"><strong>${totalQtd}</strong></td>
+    <td class="num mono"><strong>${fmt(totalTotO)}</strong></td>
+    <td class="num mono"><strong>${pct(avgConv)}</strong></td>
+  </tr>`;
+
+  document.getElementById('clientes-content').innerHTML = `
+    ${toolbarHTML()}
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Meta Clientes</div><div class="kpi-value">${totalMetaC}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Compraram</div><div class="kpi-value green">${totalComp}</div></div>
+      <div class="kpi-card"><div class="kpi-label">GAP Clientes</div><div class="kpi-value red">${totalGapC}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Clientes Abertos</div><div class="kpi-value amber">${totalAb}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Com Orçamento</div><div class="kpi-value">${totalOrcC}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Qtd Orçamentos</div><div class="kpi-value">${totalQtd}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Total Orçado/Mês</div><div class="kpi-value">${fmt(totalTotO,0)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Conversão/Mês</div><div class="kpi-value amber">${pct(avgConv)}</div></div>
+    </div>
+    <div class="section-title">Detalhamento por Vendedor — Clientes & Orçamentos</div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Vendedor</th><th>Equipe</th>
+        <th class="num">Meta Clientes</th><th class="num">Compraram</th><th class="num">GAP</th>
+        <th class="num">Abertos</th><th class="num">C/ Orçamento</th><th class="num">Qtd Orçam.</th>
+        <th class="num">Total Orçado</th><th class="num">Conversão</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+function renderSemanal(weeks, sellers) {
+  window._lastWeeks = weeks;
+  // Ensure 4 weeks
+  while (weeks.length < 4) weeks.push({ sellers: [], total: 0 });
+  const weekTotals = weeks.map(w => w.total || w.sellers.reduce((s,d)=>s+d.total,0));
+
+  // Build bars
+  function barsHTML(week) {
+    if (!week) return '<p style="color:var(--muted);font-size:13px">Sem dados</p>';
+    const maxV = Math.max(...week.sellers.map(d=>d.total), 1);
+    return week.sellers
+      .filter(d=>d.total>0)
+      .sort((a,b)=>b.total-a.total)
+      .map(d => {
+        const w = (d.total/maxV*100).toFixed(1);
+        const col = d.equipe==='SP'?'#7c6aff':d.equipe==='POA'?'#22c98e':'#f5a623';
+        const firstName = d.nome.split(' ').slice(0,2).join(' ');
+        return `<div class="week-row">
+          <span class="week-name" title="${d.nome}">${firstName}</span>
+          <div class="week-bar-wrap"><div class="week-bar-fill" style="width:${w}%;background:${col}"></div></div>
+          <span class="week-val">${fmtN(d.total)}</span>
+        </div>`;
+      }).join('');
+  }
+
+  // Table: match sellers by name across weeks
+  const names = sellers.map(s=>s.nome);
+  let trows = '';
+  filterSellers(sellers).sort((a,b)=>(b.fat||0)-(a.fat||0)).forEach(s => {
+    const wVals = weeks.map(w => {
+      const found = w.sellers.find(d=>d.nome===s.nome);
+      return found ? found.total : 0;
+    });
+    const total = wVals.reduce((a,b)=>a+b,0);
+    const cells = wVals.map(v=>v>0?`<td class="num mono">${fmt(v)}</td>`:`<td class="num mono" style="color:var(--muted)">—</td>`).join('');
+    const empties = weeks.length < 4 ? Array(4-weeks.length).fill('<td class="num mono" style="color:var(--muted)">—</td>').join('') : '';
+    trows += `<tr>
+      <td>${s.nome}</td>
+      <td>${teamBadge(s.equipe)}</td>
+      ${cells}${empties}
+      <td class="num mono"><strong>${total>0?fmt(total):'—'}</strong></td>
+    </tr>`;
+  });
+  const totCells = weekTotals.map(v=>`<td class="num mono"><strong>${v>0?fmt(v):'—'}</strong></td>`).join('');
+  const totEmpties = weeks.length<4?Array(4-weeks.length).fill('<td class="num mono">—</td>').join(''):'';
+  trows += `<tr class="totals-row">
+    <td colspan="2"><strong>TOTAL GERAL</strong></td>
+    ${totCells}${totEmpties}
+    <td class="num mono"><strong>${fmt(weekTotals.reduce((a,b)=>a+b,0))}</strong></td>
+  </tr>`;
+
+  const weekCards = [0,1,2,3].map(i => {
+    const w = weeks[i];
+    const lbl = `${i+1}ª Semana`;
+    const val = w ? weekTotals[i] : 0;
+    const cls = val > 0 ? 'green' : 'red';
+    return `<div class="kpi-card"><div class="kpi-label">${lbl}</div><div class="kpi-value ${cls}">${val>0?fmt(val):'R$ 0'}</div><div class="kpi-sub">${val>0?'Total realizado':'Sem dados'}</div></div>`;
+  }).join('');
+
+  document.getElementById('semanal-content').innerHTML = `
+    ${toolbarHTML()}
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">${weekCards}</div>
+    <div class="week-grid">
+      <div class="week-card"><div class="week-card-title">1ª Semana — por vendedor</div>${barsHTML(weeks[0])}</div>
+      <div class="week-card"><div class="week-card-title">2ª Semana — por vendedor</div>${barsHTML(weeks[1])}</div>
+    </div>
+    <div class="section-title">Detalhe Semanal Completo</div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Vendedor</th><th>Equipe</th>
+        <th class="num">1ª Semana</th><th class="num">2ª Semana</th>
+        <th class="num">3ª Semana</th><th class="num">4ª Semana</th>
+        <th class="num">Total</th>
+      </tr></thead>
+      <tbody>${trows}</tbody>
+    </table></div>`;
+}
+
+function showError(containerId, msg) {
+  document.getElementById(containerId).innerHTML = `
+    <div class="error-state">
+      <strong>⚠ Não foi possível carregar os dados</strong>
+      <p>${msg}</p>
+      <p style="margin-top:8px">Verifique se a planilha está compartilhada como "Qualquer pessoa com o link → Leitor" e tente novamente.</p>
+    </div>`;
+}
+
+async function loadAll() {
+  const icon = document.getElementById('refresh-icon');
+  icon.classList.add('spin');
+
+  let mensalData = null;
+
+  // Load Mensal first
+  try {
+    const csvMensal = await fetchCSV('Mensal');
+    const rowsMensal = parseCSV(csvMensal);
+    mensalData = parseMensal(rowsMensal);
+    renderMensal(mensalData);
+    renderClientes(mensalData.sellers);
+    const now = new Date().toLocaleString('pt-BR');
+    document.getElementById('last-update').textContent = `Atualizado em ${now} · ${mensalData.diasUteis} dias úteis no mês`;
+    document.getElementById('footer-info').textContent = `Dashboard KPIs · Atualizado em ${now} · Uso exclusivo diretoria`;
+  } catch (err) {
+    console.error(err);
+    showError('mensal-content', err.message);
+    showError('clientes-content', err.message);
+  }
+
+  // Load Semanal independently
+  try {
+    const csvSemanal = await fetchCSV('Semanal');
+    const rowsSemanal = parseCSV(csvSemanal);
+    const weeks = parseSemanal(rowsSemanal);
+    renderSemanal(weeks, mensalData ? mensalData.sellers : []);
+  } catch (err) {
+    console.error(err);
+    showError('semanal-content', err.message);
+  }
+
+  icon.classList.remove('spin');
+}
+
+function showTab(el, id) {
+  // sync filter buttons active state
+  setTimeout(() => document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.equipe === activeFilter)), 50);
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+// Load on start, auto-refresh every 5 minutes
+loadAll();
+setInterval(loadAll, 5 * 60 * 1000);
+</script>
+
+
+</body></html>
