@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<!-- saved from url=(0049)file:///C:/Users/Suporte/Downloads/diretoria.html -->
+<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel da Diretoria — 3i Distribuidora</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
+:root {
+  --azul:#1A65B8; --azul-md:#2577CC; --teal-md:#10A88E; --coral:#993C1D; --amber-md:#BA7517;
+  --bg:#0E1E35; --surface:#172D4E; --border:rgba(255,255,255,.12);
+  --text:#fff; --muted:rgba(255,255,255,.55);
+  --font:'Sora', sans-serif; --serif:'DM Serif Display', serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+
+.app-header{background:#0D1117;padding:0 1.5rem;display:flex;align-items:center;gap:10px;height:56px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-text{font-size:13px;font-weight:600;color:#fff}
+.logo-sub{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:1px}
+
+#loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 56px);gap:1rem;color:var(--muted);font-size:.9rem}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:#7AB4E8;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#load-error{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 56px);gap:1rem;padding:2rem;text-align:center}
+#load-error h2{color:var(--coral);font-size:1.2rem;font-family:var(--serif);font-weight:400}
+#load-error p{color:var(--muted);font-size:.9rem;max-width:400px}
+.btn-retry{background:var(--azul-md);color:#fff;border:none;border-radius:8px;padding:.6rem 1.5rem;font-size:.9rem;font-weight:600;cursor:pointer;font-family:var(--font)}
+
+#dash{display:none;flex-direction:column;min-height:calc(100vh - 56px);padding:1.5rem 1.5rem 3rem;max-width:1200px;margin:0 auto;gap:1.5rem}
+.dash-header h1{font-family:var(--serif);font-size:clamp(1.6rem,3vw,2.1rem);font-weight:400;color:#fff}
+.dash-header p{color:var(--muted);font-size:.85rem;margin-top:.25rem}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.75rem}
+.kpi-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:1.25rem}
+.kpi-card.highlight{border-color:var(--azul-md)}
+.kpi-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.5rem}
+.kpi-value{font-family:var(--font);font-size:1.5rem;font-weight:600;line-height:1;color:#fff}
+.good .kpi-value{color:#5fe0c5}
+.bad .kpi-value{color:#ff9b8a}
+
+.section-title{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.75rem}
+
+.table-wrap{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:760px}
+th{text-align:left;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);padding:.8rem 1rem;background:rgba(255,255,255,.05);position:sticky;top:0;cursor:pointer;user-select:none}
+th:hover{color:#fff}
+td{padding:.7rem 1rem;border-top:1px solid rgba(255,255,255,.06)}
+tr:hover td{background:rgba(255,255,255,.03)}
+.num{font-family:var(--font);font-weight:600;text-align:right}
+.status-ok{color:#5fe0c5;font-weight:600}
+.status-warn{color:#f3b96a;font-weight:600}
+.updated-at{font-size:.7rem;color:rgba(255,255,255,.35);text-align:center;font-family:var(--font)}
+
+@media(max-width:600px){ #dash{padding:1rem 1rem 2rem} }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div>
+    <div class="logo-text">3i Distribuidora</div>
+    <div class="logo-sub">Painel da Diretoria — Visão Geral</div>
+  </div>
+</div>
+
+<div id="loading" style="display: none;">
+  <div class="spinner"></div>
+  <div>Carregando dados da planilha...</div>
+</div>
+
+<div id="load-error">
+  <h2>Não foi possível carregar os dados</h2>
+  <p id="error-detail">Verifique se a planilha está compartilhada como "qualquer pessoa com o link pode ver".</p>
+  <button class="btn-retry" onclick="location.reload()">Tentar de novo</button>
+</div>
+
+<div id="dash" style="display: flex;">
+  <div class="dash-header">
+    <h1>Visão Geral da Equipe</h1>
+    <p>Consolidado de todos os vendedores — sem necessidade de login</p>
+  </div>
+
+  <div class="kpi-grid" id="totais">
+    <div class="kpi-card highlight">
+      <div class="kpi-label">Faturado Total</div>
+      <div class="kpi-value">R$ 1.017.697</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Meta Total</div>
+      <div class="kpi-value">R$ 4.210.000</div>
+    </div>
+    <div class="kpi-card ">
+      <div class="kpi-label">% da Meta Geral</div>
+      <div class="kpi-value">24.2%</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="kpi-label">GAP Total</div>
+      <div class="kpi-value">R$ 3.192.303</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Vendedores no Relógio</div>
+      <div class="kpi-value">4 / 21</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-title">Vendedores</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="ordenarPor(&#39;nome&#39;)">Vendedor</th>
+            <th onclick="ordenarPor(&#39;equipe&#39;)">Equipe</th>
+            <th onclick="ordenarPor(&#39;faturado&#39;)" class="num">Faturado</th>
+            <th onclick="ordenarPor(&#39;meta&#39;)" class="num">Meta</th>
+            <th onclick="ordenarPor(&#39;pct&#39;)" class="num">% Meta</th>
+            <th onclick="ordenarPor(&#39;gap&#39;)" class="num">GAP</th>
+            <th onclick="ordenarPor(&#39;ranking&#39;)" class="num">Ranking</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"><tr>
+      <td>Gisele Priebe Pinheiro</td>
+      <td>POA</td>
+      <td class="num">R$ 184.303</td>
+      <td class="num">R$ 700.000</td>
+      <td class="num">33.2%</td>
+      <td class="num">R$ 467.429</td>
+      <td class="num">#6</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Ana Cristina Wruch</td>
+      <td>SP</td>
+      <td class="num">R$ 134.067</td>
+      <td class="num">R$ 540.000</td>
+      <td class="num">30.9%</td>
+      <td class="num">R$ 373.171</td>
+      <td class="num">#8</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Jose Antonio Oliveira</td>
+      <td>POA</td>
+      <td class="num">R$ 132.573</td>
+      <td class="num">R$ 550.000</td>
+      <td class="num">34.9%</td>
+      <td class="num">R$ 358.031</td>
+      <td class="num">#4</td>
+      <td class="status-ok">No Relógio</td>
+    </tr><tr>
+      <td>Vanessa Viegas Schlemmer</td>
+      <td>POA</td>
+      <td class="num">R$ 115.066</td>
+      <td class="num">R$ 370.000</td>
+      <td class="num">34.3%</td>
+      <td class="num">R$ 243.064</td>
+      <td class="num">#5</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Flavio Machado Dos Reis</td>
+      <td>SP</td>
+      <td class="num">R$ 106.118</td>
+      <td class="num">R$ 420.000</td>
+      <td class="num">27.9%</td>
+      <td class="num">R$ 302.907</td>
+      <td class="num">#10</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Vagner Tavares Kulzer</td>
+      <td>POA</td>
+      <td class="num">R$ 76.915</td>
+      <td class="num">R$ 240.000</td>
+      <td class="num">32.2%</td>
+      <td class="num">R$ 162.645</td>
+      <td class="num">#7</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Mateus Ostrowski</td>
+      <td>POA</td>
+      <td class="num">R$ 49.479</td>
+      <td class="num">R$ 240.000</td>
+      <td class="num">22.2%</td>
+      <td class="num">R$ 186.638</td>
+      <td class="num">#12</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>AnastáZia Bernardino Moreira</td>
+      <td>SP</td>
+      <td class="num">R$ 41.965</td>
+      <td class="num">R$ 100.000</td>
+      <td class="num">42.0%</td>
+      <td class="num">R$ 58.035</td>
+      <td class="num">#3</td>
+      <td class="status-ok">No Relógio</td>
+    </tr><tr>
+      <td>Naiara Vaz</td>
+      <td>POA</td>
+      <td class="num">R$ 38.672</td>
+      <td class="num">R$ 290.000</td>
+      <td class="num">13.3%</td>
+      <td class="num">R$ 251.328</td>
+      <td class="num">#15</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Jonatan Azevedo De Souza</td>
+      <td>POA</td>
+      <td class="num">R$ 38.565</td>
+      <td class="num">R$ 130.000</td>
+      <td class="num">29.7%</td>
+      <td class="num">R$ 91.435</td>
+      <td class="num">#9</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Williams Santos De Andrade</td>
+      <td>POA</td>
+      <td class="num">R$ 36.425</td>
+      <td class="num">R$ 270.000</td>
+      <td class="num">14.1%</td>
+      <td class="num">R$ 231.944</td>
+      <td class="num">#14</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Veridiana De Souza Azeredo</td>
+      <td>POA</td>
+      <td class="num">R$ 26.529</td>
+      <td class="num">R$ 50.000</td>
+      <td class="num">53.1%</td>
+      <td class="num">R$ 23.471</td>
+      <td class="num">#1</td>
+      <td class="status-ok">No Relógio</td>
+    </tr><tr>
+      <td>Wilma Gerente</td>
+      <td>SP</td>
+      <td class="num">R$ 11.961</td>
+      <td class="num">R$ 100.000</td>
+      <td class="num">12.0%</td>
+      <td class="num">R$ 88.039</td>
+      <td class="num">#16</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>MiquéIas Dos Santos Da Gama</td>
+      <td>POA</td>
+      <td class="num">R$ 10.565</td>
+      <td class="num">R$ 50.000</td>
+      <td class="num">23.3%</td>
+      <td class="num">R$ 38.349</td>
+      <td class="num">#11</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Diego Sampaio</td>
+      <td>SP</td>
+      <td class="num">R$ 6.445</td>
+      <td class="num">R$ 20.000</td>
+      <td class="num">50.7%</td>
+      <td class="num">R$ 9.850</td>
+      <td class="num">#2</td>
+      <td class="status-ok">No Relógio</td>
+    </tr><tr>
+      <td>Kelly Mayana Oliveira</td>
+      <td>POA</td>
+      <td class="num">R$ 3.449</td>
+      <td class="num">R$ 30.000</td>
+      <td class="num">20.2%</td>
+      <td class="num">R$ 23.946</td>
+      <td class="num">#13</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Charles Ferreira Lacava</td>
+      <td>POA</td>
+      <td class="num">R$ 2.525</td>
+      <td class="num">R$ 30.000</td>
+      <td class="num">8.4%</td>
+      <td class="num">R$ 27.475</td>
+      <td class="num">#17</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Rafael Ferreira</td>
+      <td>POA</td>
+      <td class="num">R$ 2.076</td>
+      <td class="num">R$ 30.000</td>
+      <td class="num">6.9%</td>
+      <td class="num">R$ 27.924</td>
+      <td class="num">#18</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Matheus Almeida De Oliveira</td>
+      <td>POA</td>
+      <td class="num">R$ 0</td>
+      <td class="num">R$ 0</td>
+      <td class="num">—</td>
+      <td class="num">R$ 0</td>
+      <td class="num">#19</td>
+      <td class="status-warn">—</td>
+    </tr><tr>
+      <td>Melissa Barbosa Mendes</td>
+      <td>POA</td>
+      <td class="num">R$ 0</td>
+      <td class="num">R$ 30.000</td>
+      <td class="num">0.0%</td>
+      <td class="num">R$ 30.000</td>
+      <td class="num">#19</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr><tr>
+      <td>Rubens De Matos Santos</td>
+      <td>SP</td>
+      <td class="num">R$ 0</td>
+      <td class="num">R$ 20.000</td>
+      <td class="num">0.0%</td>
+      <td class="num">R$ 20.000</td>
+      <td class="num">#19</td>
+      <td class="status-warn">Fora do Relógio</td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="updated-at" id="updated">Atualizado em 13/07/2026, 17:23:29</div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// Mesma fonte de dados do dashboard de vendedores — sem login
+// ════════════════════════════════════════════════════════════
+const ABA_MENSAL = "Mensal";
+const ABA_SEMANAL = "Semanal";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1n4coHQrBLA6pNAIfcmG923EGZniVwM3skUJHCOJ27MS34y6mbe1NqE6WV14alIxwQg/exec";
+
+let SELLERS = {};
+let ORDEM_ATUAL = { campo: 'faturado', dir: -1 };
+
+async function fetchCSV(aba) {
+  const url = `${APPS_SCRIPT_URL}?sheet=${encodeURIComponent(aba)}&t=${Date.now()}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status} ao buscar aba "${aba}"`);
+  return await res.text();
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') { if (text[i+1] === '"') { field += '"'; i++; } else inQuotes = false; }
+      else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') { /* ignora */ }
+      else field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function toNumber(v) {
+  if (v == null) return 0;
+  const s = String(v).trim();
+  if (s === '' || s === '—' || s === '-') return 0;
+  if (!s.includes(',') && !s.includes('R$')) { const n = parseFloat(s); return isNaN(n) ? 0 : n; }
+  const cleaned = s.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+function toPercent(v) {
+  if (v == null) return 0;
+  const s = String(v).trim();
+  if (s === '' || s === '—') return 0;
+  const cleaned = s.replace('%', '').replace(',', '.');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+async function carregarMensal() {
+  const text = await fetchCSV(ABA_MENSAL);
+  const rows = parseCSV(text);
+
+  let headerRowIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].some(c => String(c).trim().toLowerCase() === 'vendedor')) { headerRowIdx = i; break; }
+  }
+  if (headerRowIdx === -1) throw new Error('Cabeçalho "Vendedor" não encontrado na aba Mensal');
+
+  const headers = rows[headerRowIdx].map(h => String(h).trim());
+  const colIdx = (nameContains) => headers.findIndex(h => h.toLowerCase().includes(nameContains.toLowerCase()));
+
+  const iEquipe = colIdx('equipe');
+  const iVendedor = colIdx('vendedor');
+  const iRanking = colIdx('ranking');
+  const iMeta = headers.findIndex(h => h.toLowerCase().trim() === 'meta');
+  const iFat = colIdx('faturado');
+  const iAguFat = colIdx('aguardando faturar');
+  const iTotal = colIdx('vendas total');
+  const iICM = headers.findIndex(h => h.trim().toUpperCase() === 'ICM');
+  const iStatus = colIdx('status');
+  const iGap = headers.findIndex(h => h.trim().toUpperCase() === 'GAP');
+
+  const sellers = {};
+  for (let r = headerRowIdx + 1; r < rows.length; r++) {
+    const row = rows[r];
+    const nome = String(row[iVendedor] || '').trim();
+    if (!nome || nome.toLowerCase().includes('totais')) continue;
+
+    const meta = toNumber(row[iMeta]);
+    const icm = toPercent(row[iICM]);
+    sellers[nome] = {
+      nome,
+      equipe: String(row[iEquipe] || '').trim(),
+      ranking: parseInt(row[iRanking]) || 0,
+      meta,
+      faturado: toNumber(row[iFat]),
+      aguFaturar: toNumber(row[iAguFat]),
+      total: toNumber(row[iTotal]),
+      pct: meta > 0 ? icm * 100 : 0,
+      status: String(row[iStatus] || '').trim(),
+      gap: toNumber(row[iGap]),
+    };
+  }
+  return sellers;
+}
+
+function toTitle(s) { return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
+function fmt(v) { if (!v && v !== 0) return '—'; return 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+
+function calcularTotais() {
+  const vals = Object.values(SELLERS);
+  const totalFaturado = vals.reduce((s, v) => s + v.faturado, 0);
+  const totalMeta = vals.reduce((s, v) => s + v.meta, 0);
+  const totalGap = Math.max(0, totalMeta - totalFaturado);
+  const pctGeral = totalMeta > 0 ? (totalFaturado / totalMeta) * 100 : 0;
+  const noRelogio = vals.filter(v => v.status.toLowerCase().includes('no rel')).length;
+
+  document.getElementById('totais').innerHTML = `
+    <div class="kpi-card highlight">
+      <div class="kpi-label">Faturado Total</div>
+      <div class="kpi-value">${fmt(totalFaturado)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Meta Total</div>
+      <div class="kpi-value">${fmt(totalMeta)}</div>
+    </div>
+    <div class="kpi-card ${pctGeral >= 100 ? 'good' : ''}">
+      <div class="kpi-label">% da Meta Geral</div>
+      <div class="kpi-value">${pctGeral.toFixed(1)}%</div>
+    </div>
+    <div class="kpi-card ${totalGap > 0 ? 'bad' : 'good'}">
+      <div class="kpi-label">GAP Total</div>
+      <div class="kpi-value">${totalGap > 0 ? fmt(totalGap) : 'Meta batida! 🎉'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Vendedores no Relógio</div>
+      <div class="kpi-value">${noRelogio} / ${vals.length}</div>
+    </div>
+  `;
+}
+
+function renderTabela() {
+  const vals = Object.values(SELLERS);
+  const { campo, dir } = ORDEM_ATUAL;
+  vals.sort((a, b) => {
+    const va = a[campo], vb = b[campo];
+    if (typeof va === 'string') return va.localeCompare(vb, 'pt-BR') * dir;
+    return (va - vb) * dir;
+  });
+
+  document.getElementById('tbody').innerHTML = vals.map(v => {
+    const ok = v.status.toLowerCase().includes('no rel');
+    return `<tr>
+      <td>${toTitle(v.nome)}</td>
+      <td>${v.equipe}</td>
+      <td class="num">${fmt(v.faturado)}</td>
+      <td class="num">${fmt(v.meta)}</td>
+      <td class="num">${v.meta > 0 ? v.pct.toFixed(1) + '%' : '—'}</td>
+      <td class="num">${v.meta > 0 && v.gap <= 0 ? '🎉' : fmt(v.gap)}</td>
+      <td class="num">${v.ranking > 0 ? '#' + v.ranking : '—'}</td>
+      <td class="${ok ? 'status-ok' : 'status-warn'}">${v.status || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function ordenarPor(campo) {
+  if (ORDEM_ATUAL.campo === campo) ORDEM_ATUAL.dir *= -1;
+  else ORDEM_ATUAL = { campo, dir: -1 };
+  renderTabela();
+}
+
+async function iniciar(tentativa = 1) {
+  try {
+    SELLERS = await carregarMensal();
+    calcularTotais();
+    renderTabela();
+    document.getElementById('updated').textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR');
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('dash').style.display = 'flex';
+  } catch (err) {
+    console.error('Tentativa', tentativa, err);
+    if (tentativa < 3) { setTimeout(() => iniciar(tentativa + 1), 1500); return; }
+    document.getElementById('loading').style.display = 'none';
+    let msg = err.message || 'Erro desconhecido ao carregar a planilha.';
+    if (msg.includes('Failed to fetch')) {
+      msg = 'Não foi possível conectar ao Google Sheets. Verifique sua conexão, ou se a planilha continua compartilhada como pública.';
+    }
+    document.getElementById('error-detail').textContent = msg;
+    document.getElementById('load-error').style.display = 'flex';
+  }
+}
+
+iniciar();
+</script>
+
+
+</body></html>
