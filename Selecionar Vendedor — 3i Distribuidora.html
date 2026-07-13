@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<!-- saved from url=(0059)file:///C:/Users/Suporte/Downloads/selecionar-vendedor.html -->
+<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Selecionar Vendedor — 3i Distribuidora</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
+:root {
+  --azul:#1A65B8; --azul-md:#2577CC; --azul-bd:#7AB4E8;
+  --teal-md:#10A88E; --coral:#993C1D; --amber-md:#BA7517;
+  --bg:#0E1E35; --surface:#172D4E; --border:rgba(255,255,255,.12);
+  --text:#fff; --muted:rgba(255,255,255,.55);
+  --font:'Sora', sans-serif; --serif:'DM Serif Display', serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+
+.app-header{background:#0D1117;padding:0 1.5rem;display:flex;align-items:center;gap:10px;height:56px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-box{width:32px;height:32px;background:#fff;border-radius:6px}
+.logo-text{font-size:13px;font-weight:600;color:#fff}
+.logo-sub{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:1px}
+
+#loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 56px);gap:1rem;color:var(--muted);font-size:.9rem}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--azul-bd);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#load-error{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 56px);gap:1rem;padding:2rem;text-align:center}
+#load-error h2{color:var(--coral);font-size:1.2rem;font-family:var(--serif);font-weight:400}
+#load-error p{color:var(--muted);font-size:.9rem;max-width:400px}
+.btn-retry{background:var(--azul-md);color:#fff;border:none;border-radius:8px;padding:.6rem 1.5rem;font-size:.9rem;font-weight:600;cursor:pointer;font-family:var(--font)}
+
+#content{display:none;max-width:760px;margin:0 auto;padding:2.5rem 1.5rem 3rem}
+.page-title{font-family:var(--serif);font-size:clamp(1.6rem,4vw,2.1rem);font-weight:400;margin-bottom:.4rem}
+.page-sub{color:var(--muted);font-size:.9rem;margin-bottom:2rem}
+
+.search-box{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;color:#fff;font-family:var(--font);font-size:.95rem;margin-bottom:1.5rem;outline:none}
+.search-box::placeholder{color:var(--muted)}
+.search-box:focus{border-color:var(--azul-bd)}
+
+.team-tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.team-tab{padding:.4rem 1rem;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
+.team-tab.active{color:#fff;border-color:var(--azul-bd);background:rgba(122,180,232,.15)}
+
+.seller-list{display:flex;flex-direction:column;gap:.6rem}
+.seller-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;text-decoration:none;color:inherit;transition:border-color .2s,background .2s}
+.seller-card:hover{border-color:var(--azul-bd);background:rgba(255,255,255,.07)}
+.seller-info{display:flex;flex-direction:column;gap:.2rem}
+.seller-name{font-size:.95rem;font-weight:600;text-transform:capitalize}
+.seller-meta{font-size:.72rem;color:var(--muted);display:flex;gap:.5rem;align-items:center}
+.team-badge{padding:1px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.4px}
+.team-badge.sp{background:rgba(122,180,232,.18);color:var(--azul-bd)}
+.team-badge.poa{background:rgba(16,168,142,.18);color:var(--teal-md)}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.status-dot.ok{background:var(--teal-md)}
+.status-dot.out{background:var(--coral)}
+.seller-arrow{color:var(--muted);font-size:1.1rem}
+.no-results{color:var(--muted);font-size:.9rem;text-align:center;padding:2rem}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="logo-box"></div>
+  <div>
+    <div class="logo-text">3i Distribuidora</div>
+    <div class="logo-sub">Selecionar Vendedor</div>
+  </div>
+</div>
+
+<div id="loading" style="display: none;">
+  <div class="spinner"></div>
+  <div>Carregando lista de vendedores...</div>
+</div>
+
+<div id="load-error">
+  <h2>Não foi possível carregar os dados</h2>
+  <p id="error-detail">Verifique se a planilha está compartilhada como "qualquer pessoa com o link pode ver".</p>
+  <button class="btn-retry" onclick="location.reload()">Tentar de novo</button>
+</div>
+
+<div id="content" style="display: block;">
+  <div class="page-title">Ver dashboard <em style="font-style:italic;color:#7AB4E8">de um vendedor</em></div>
+  <div class="page-sub">Clique em um nome para abrir os números dele — sem precisar de senha.</div>
+
+  <input type="text" class="search-box" id="search" placeholder="Buscar vendedor..." oninput="renderList()">
+
+  <div class="team-tabs" id="team-tabs">
+    <div class="team-tab active" data-team="all" onclick="setTeamFilter(&#39;all&#39;)">Todas as Equipes</div>
+    <div class="team-tab" data-team="SP" onclick="setTeamFilter(&#39;SP&#39;)">SP</div>
+    <div class="team-tab" data-team="POA" onclick="setTeamFilter(&#39;POA&#39;)">POA</div>
+  </div>
+
+  <div class="seller-list" id="seller-list"><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=ANA%20CRISTINA%20WRUCH">
+      <div class="seller-info">
+        <div class="seller-name">Ana Cristina Wruch</div>
+        <div class="seller-meta">
+          <span class="team-badge sp">SP</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=ANAST%C3%81ZIA%20BERNARDINO%20MOREIRA">
+      <div class="seller-info">
+        <div class="seller-name">AnastáZia Bernardino Moreira</div>
+        <div class="seller-meta">
+          <span class="team-badge sp">SP</span>
+          <span class="status-dot ok"></span>
+          <span>No Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=CHARLES%20FERREIRA%20LACAVA">
+      <div class="seller-info">
+        <div class="seller-name">Charles Ferreira Lacava</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=DIEGO%20SAMPAIO">
+      <div class="seller-info">
+        <div class="seller-name">Diego Sampaio</div>
+        <div class="seller-meta">
+          <span class="team-badge sp">SP</span>
+          <span class="status-dot ok"></span>
+          <span>No Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=FLAVIO%20MACHADO%20DOS%20REIS">
+      <div class="seller-info">
+        <div class="seller-name">Flavio Machado Dos Reis</div>
+        <div class="seller-meta">
+          <span class="team-badge sp">SP</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=GISELE%20PRIEBE%20PINHEIRO">
+      <div class="seller-info">
+        <div class="seller-name">Gisele Priebe Pinheiro</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=JONATAN%20AZEVEDO%20DE%20SOUZA">
+      <div class="seller-info">
+        <div class="seller-name">Jonatan Azevedo De Souza</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=JOSE%20ANTONIO%20OLIVEIRA">
+      <div class="seller-info">
+        <div class="seller-name">Jose Antonio Oliveira</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot ok"></span>
+          <span>No Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=KELLY%20MAYANA%20OLIVEIRA">
+      <div class="seller-info">
+        <div class="seller-name">Kelly Mayana Oliveira</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=MATEUS%20OSTROWSKI">
+      <div class="seller-info">
+        <div class="seller-name">Mateus Ostrowski</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=MATHEUS%20ALMEIDA%20DE%20OLIVEIRA">
+      <div class="seller-info">
+        <div class="seller-name">Matheus Almeida De Oliveira</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>—</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=MELISSA%20BARBOSA%20MENDES">
+      <div class="seller-info">
+        <div class="seller-name">Melissa Barbosa Mendes</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=MIQU%C3%89IAS%20DOS%20SANTOS%20DA%20GAMA">
+      <div class="seller-info">
+        <div class="seller-name">MiquéIas Dos Santos Da Gama</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=NAIARA%20VAZ">
+      <div class="seller-info">
+        <div class="seller-name">Naiara Vaz</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=RAFAEL%20FERREIRA">
+      <div class="seller-info">
+        <div class="seller-name">Rafael Ferreira</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=RUBENS%20DE%20MATOS%20SANTOS">
+      <div class="seller-info">
+        <div class="seller-name">Rubens De Matos Santos</div>
+        <div class="seller-meta">
+          <span class="team-badge sp">SP</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=VAGNER%20TAVARES%20KULZER">
+      <div class="seller-info">
+        <div class="seller-name">Vagner Tavares Kulzer</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=VANESSA%20VIEGAS%20SCHLEMMER">
+      <div class="seller-info">
+        <div class="seller-name">Vanessa Viegas Schlemmer</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=VERIDIANA%20DE%20SOUZA%20AZEREDO">
+      <div class="seller-info">
+        <div class="seller-name">Veridiana De Souza Azeredo</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot ok"></span>
+          <span>No Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=WILLIAMS%20SANTOS%20DE%20ANDRADE">
+      <div class="seller-info">
+        <div class="seller-name">Williams Santos De Andrade</div>
+        <div class="seller-meta">
+          <span class="team-badge poa">POA</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a><a class="seller-card" href="file:///C:/Users/Suporte/Downloads/index.html?v=WILMA%20GERENTE">
+      <div class="seller-info">
+        <div class="seller-name">Wilma Gerente</div>
+        <div class="seller-meta">
+          <span class="team-badge sp">SP</span>
+          <span class="status-dot out"></span>
+          <span>Fora do Relógio</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// Mesma fonte de dados do dashboard de vendedores
+// ════════════════════════════════════════════════════════════
+const ABA_MENSAL = "Mensal";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1n4coHQrBLA6pNAIfcmG923EGZniVwM3skUJHCOJ27MS34y6mbe1NqE6WV14alIxwQg/exec";
+
+let SELLERS = [];
+let teamFilter = 'all';
+
+async function fetchCSV(aba) {
+  const url = `${APPS_SCRIPT_URL}?sheet=${encodeURIComponent(aba)}&t=${Date.now()}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status} ao buscar aba "${aba}"`);
+  return await res.text();
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') { if (text[i+1] === '"') { field += '"'; i++; } else inQuotes = false; }
+      else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') { /* ignora */ }
+      else field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function toTitle(s) { return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
+
+async function carregarMensal() {
+  const text = await fetchCSV(ABA_MENSAL);
+  const rows = parseCSV(text);
+
+  let headerRowIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].some(c => String(c).trim().toLowerCase() === 'vendedor')) { headerRowIdx = i; break; }
+  }
+  if (headerRowIdx === -1) throw new Error('Cabeçalho "Vendedor" não encontrado na aba Mensal');
+
+  const headers = rows[headerRowIdx].map(h => String(h).trim());
+  const colIdx = (nameContains) => headers.findIndex(h => h.toLowerCase().includes(nameContains.toLowerCase()));
+
+  const iEquipe = colIdx('equipe');
+  const iVendedor = colIdx('vendedor');
+  const iStatus = colIdx('status');
+
+  const sellers = [];
+  for (let r = headerRowIdx + 1; r < rows.length; r++) {
+    const row = rows[r];
+    const nome = String(row[iVendedor] || '').trim();
+    if (!nome || nome.toLowerCase().includes('totais')) continue;
+    sellers.push({
+      nome,
+      equipe: String(row[iEquipe] || '').trim(),
+      status: String(row[iStatus] || '').trim(),
+    });
+  }
+  return sellers;
+}
+
+function setTeamFilter(team) {
+  teamFilter = team;
+  document.querySelectorAll('.team-tab').forEach(t => t.classList.toggle('active', t.dataset.team === team));
+  renderList();
+}
+
+function renderList() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const list = document.getElementById('seller-list');
+
+  let filtered = SELLERS;
+  if (teamFilter !== 'all') filtered = filtered.filter(s => s.equipe === teamFilter);
+  if (q) filtered = filtered.filter(s => s.nome.toLowerCase().includes(q));
+
+  filtered = [...filtered].sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-results">Nenhum vendedor encontrado.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => {
+    const ok = s.status.toLowerCase().includes('no rel');
+    const teamCls = s.equipe === 'SP' ? 'sp' : s.equipe === 'POA' ? 'poa' : '';
+    const link = 'index.html?v=' + encodeURIComponent(s.nome);
+    return `<a class="seller-card" href="${link}">
+      <div class="seller-info">
+        <div class="seller-name">${toTitle(s.nome)}</div>
+        <div class="seller-meta">
+          ${s.equipe ? `<span class="team-badge ${teamCls}">${s.equipe}</span>` : ''}
+          <span class="status-dot ${ok?'ok':'out'}"></span>
+          <span>${s.status || '—'}</span>
+        </div>
+      </div>
+      <span class="seller-arrow">→</span>
+    </a>`;
+  }).join('');
+}
+
+async function iniciar(tentativa = 1) {
+  try {
+    SELLERS = await carregarMensal();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    renderList();
+  } catch (err) {
+    console.error('Tentativa', tentativa, err);
+    if (tentativa < 3) { setTimeout(() => iniciar(tentativa + 1), 1500); return; }
+    document.getElementById('loading').style.display = 'none';
+    let msg = err.message || 'Erro desconhecido ao carregar a planilha.';
+    if (msg.includes('Failed to fetch')) {
+      msg = 'Não foi possível conectar ao Google Sheets. Verifique sua conexão, ou se a planilha continua compartilhada como pública.';
+    }
+    document.getElementById('error-detail').textContent = msg;
+    document.getElementById('load-error').style.display = 'flex';
+  }
+}
+
+iniciar();
+</script>
+
+
+</body></html>
