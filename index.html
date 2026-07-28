@@ -353,6 +353,13 @@ function parseMensal(rows) {
       agFin:   num(r[5]),
       va:      num(r[6]),
       agFat:   num(r[7]),
+      // "Vendas Total" = Faturado + Ag. Faturar, apenas. A coluna bruta da planilha
+      // (r[8]) soma Faturado + VA + Ag. Faturar, o que inflava o total com o VA
+      // (que já é mostrado como card separado). Por isso recalculamos aqui.
+      // "Vendas Total" volta a usar o valor pronto da planilha, que já soma
+      // Faturado + VA + Ag. Faturar corretamente. O problema não era o cálculo,
+      // era o VA não aparecer como coluna própria nas tabelas/exportação — isso
+      // foi corrigido adicionando a coluna VA junto de Faturado e Ag. Faturar.
       total:   num(r[8]),
       icm:     num(r[9]),
       status:  r[10] ? r[10].toString().trim() : '',
@@ -615,6 +622,7 @@ function renderMensal(data) {
       <td>${teamBadge(d.equipe)}</td>
       <td class="num mono">${fmtI(d.meta)}</td>
       <td class="num mono">${fmtI(d.fat)}</td>
+      <td class="num mono">${d.va?fmtI(d.va):'—'}</td>
       <td class="num mono">${d.agFat?fmtI(d.agFat):'—'}</td>
       <td class="num mono">${fmtI(d.total)}</td>
       <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${barW}%;background:${barColor}"></div></div><span class="prog-label" style="color:${barColor}">${pct(icmPct)}</span></div></td>
@@ -629,6 +637,7 @@ function renderMensal(data) {
     <td colspan="3"><strong>TOTAIS</strong></td>
     <td class="num mono"><strong>${fmtI(totalMeta)}</strong></td>
     <td class="num mono"><strong>${fmtI(totalFat)}</strong></td>
+    <td class="num mono"><strong>${fmtI(totalVA)}</strong></td>
     <td class="num mono"><strong>${fmtI(totalAgFat)}</strong></td>
     <td class="num mono"><strong>${fmtI(totalTot)}</strong></td>
     <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${Math.min(icmTotal,1)*100}%;background:#D99B2B"></div></div><span class="prog-label" style="color:#D99B2B">${pct(icmTotal)}</span></div></td>
@@ -643,9 +652,9 @@ function renderMensal(data) {
       <div class="kpi-card"><div class="kpi-label">Meta Total</div><div class="kpi-value">${fmt(totalMeta,0)}</div><div class="kpi-sub">${filteredWithMeta.length} vendedores</div></div>
       <div class="kpi-card"><div class="kpi-label">Faturado</div><div class="kpi-value green">${fmt(totalFat)}</div><div class="kpi-sub">${pct(icmTotal)} da meta</div></div>
       <div class="kpi-card"><div class="kpi-label">Ag. Financeiro</div><div class="kpi-value amber">${fmt(totalAgFin)}</div><div class="kpi-sub">Não contabiliza</div></div>
-      <div class="kpi-card"><div class="kpi-label">VA</div><div class="kpi-value amber">${fmt(totalVA)}</div><div class="kpi-sub">Valor adicional do período</div></div>
+      <div class="kpi-card"><div class="kpi-label">VA</div><div class="kpi-value amber">${fmt(totalVA)}</div><div class="kpi-sub">Incluso em Vendas Total</div></div>
       <div class="kpi-card"><div class="kpi-label">Ag. Faturar</div><div class="kpi-value amber">${fmt(totalAgFat)}</div><div class="kpi-sub">Incluso em Vendas Total</div></div>
-      <div class="kpi-card"><div class="kpi-label">Vendas Total</div><div class="kpi-value">${fmt(totalTot)}</div><div class="kpi-sub">Fat. + Ag. Faturar</div></div>
+      <div class="kpi-card"><div class="kpi-label">Vendas Total</div><div class="kpi-value">${fmt(totalTot)}</div><div class="kpi-sub">Fat. + VA + Ag. Faturar</div></div>
       <div class="kpi-card"><div class="kpi-label">Média/Dia</div><div class="kpi-value">${fmt(mediaDias)}</div><div class="kpi-sub">Dias úteis passados</div></div>
       <div class="kpi-card"><div class="kpi-label">GAP da Meta</div><div class="kpi-value ${totalGap<=0?'green':'red'}">${totalGap<=0?'-'+fmt(Math.abs(totalGap)):fmt(totalGap)}</div><div class="kpi-sub">${totalGap<=0?'Meta superada!':'A fechar no mês'}</div></div>
       <div class="kpi-card"><div class="kpi-label">Projeção</div><div class="kpi-value">${fmt(projecao)}</div><div class="kpi-sub">Baseado em média/dia</div></div>
@@ -661,7 +670,7 @@ function renderMensal(data) {
     <div class="table-wrap fit"><table>
       <thead><tr>
         <th style="width:30px">#</th><th>Vendedor</th><th style="width:55px">Equipe</th>
-        <th class="num">Meta</th><th class="num">Faturado</th><th class="num">Ag. Fat.</th>
+        <th class="num">Meta</th><th class="num">Faturado</th><th class="num">VA</th><th class="num">Ag. Fat.</th>
         <th class="num">Total</th><th style="min-width:100px">% Meta</th>
         <th style="width:90px">Status</th><th class="num">GAP</th><th class="num">Meta/Dia</th>
       </tr></thead>
