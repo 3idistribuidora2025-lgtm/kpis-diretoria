@@ -529,7 +529,7 @@ function exportCurrentTab() {
       const icmPct = d.icm != null ? d.icm : ((d.meta||0) > 0 ? (d.fat||0)/(d.meta||1) : 0);
       return [
         i+1, d.nome, d.equipe,
-        d.meta||0, d.fat||0, d.agFat||0,
+        d.meta||0, d.fat||0, d.va||0, d.agFat||0,
         +(icmPct*100).toFixed(1),
         d.status||'', d.gap||0, d.metaDia||0,
         d.total||0
@@ -537,16 +537,17 @@ function exportCurrentTab() {
     });
     const totalMeta  = sortedSellers.reduce((s,d)=>s+(d.meta||0),0);
     const totalFat   = sortedSellers.reduce((s,d)=>s+(d.fat||0),0);
+    const totalVA    = sortedSellers.reduce((s,d)=>s+(d.va||0),0);
     const totalAgFat = sortedSellers.reduce((s,d)=>s+(d.agFat||0),0);
     const totalGap   = sortedSellers.reduce((s,d)=>s+(d.gap||0),0);
     const totalVendas= sortedSellers.reduce((s,d)=>s+(d.total||0),0);
     const sheetIcmTotal = window._lastMensalData ? window._lastMensalData.sheetIcmTotal : null;
     const icmTotal = (activeFilter === 'all' && sheetIcmTotal != null) ? sheetIcmTotal : (totalMeta>0 ? totalVendas/totalMeta : 0);
     const totalPct = +(icmTotal*100).toFixed(1);
-    dataRows.push(['', 'TOTAL GERAL', '', totalMeta, totalFat, totalAgFat, totalPct, '', totalGap, '', totalVendas]);
+    dataRows.push(['', 'TOTAL GERAL', '', totalMeta, totalFat, totalVA, totalAgFat, totalPct, '', totalGap, '', totalVendas]);
 
     exportXLSX(
-      ['#','Vendedor','Equipe','Meta','Faturado','Ag. Faturar','% Meta','Status','GAP','Meta/Dia','Vendas Total'],
+      ['#','Vendedor','Equipe','Meta','Faturado','VA','Ag. Faturar','% Meta','Status','GAP','Meta/Dia','Vendas Total'],
       dataRows,
       'kpis_mensal.xlsx'
     );
