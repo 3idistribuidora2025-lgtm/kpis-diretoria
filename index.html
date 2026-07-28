@@ -556,11 +556,11 @@ function exportCurrentTab() {
     );
   } else if (activeTab === 'semanal') {
     const weeks = window._lastWeeks || [];
+    const weekHeaders = weeks.map((w,i) => `${i+1}ª Semana`);
     exportXLSX(
-      ['Vendedor','Equipe','1ª Semana','2ª Semana','3ª Semana','4ª Semana','Total'],
+      ['Vendedor','Equipe', ...weekHeaders, 'Total'],
       [...sellers].sort((a,b)=>(b.fat||0)-(a.fat||0)).map(s => {
         const wv = weeks.map(w => { const f = w.sellers.find(d=>d.nome===s.nome); return f?f.total:0; });
-        while(wv.length<4) wv.push(0);
         return [s.nome, s.equipe, ...wv, wv.reduce((a,b)=>a+b,0)];
       }),
       'kpis_semanal.xlsx'
@@ -784,7 +784,10 @@ function renderClientes(sellers, sheetTotals) {
 
 function renderSemanal(weeks, sellers) {
   window._lastWeeks = weeks;
-  while (weeks.length < 4) weeks.push({ sellers: [], total: 0 });
+  // Não força um número fixo de semanas: a planilha manda. Algumas edições
+  // do mês têm 4 semanas, outras 5 — a tabela sempre acompanha o que o
+  // parseSemanal() encontrou (um bloco "Equipe" = uma semana).
+  const numWeeks = weeks.length;
 
   const filtered = filterSellers(sellers);
   const filteredNames = new Set(filtered.map(s => s.nome));
@@ -801,26 +804,23 @@ function renderSemanal(weeks, sellers) {
     });
     const total = wVals.reduce((a,b)=>a+b,0);
     const cells = wVals.map(v=>v>0?`<td class="num mono">${fmt(v)}</td>`:`<td class="num mono" style="color:var(--muted)">—</td>`).join('');
-    const empties = weeks.length < 4 ? Array(4-weeks.length).fill('<td class="num mono" style="color:var(--muted)">—</td>').join('') : '';
     trows += `<tr>
       <td>${s.nome}</td>
       <td>${teamBadge(s.equipe)}</td>
-      ${cells}${empties}
+      ${cells}
       <td class="num mono"><strong>${total>0?fmt(total):'—'}</strong></td>
     </tr>`;
   });
   const totCells = weekTotals.map(v=>`<td class="num mono"><strong>${v>0?fmt(v):'—'}</strong></td>`).join('');
-  const totEmpties = weeks.length<4?Array(4-weeks.length).fill('<td class="num mono">—</td>').join(''):'';
   trows += `<tr class="totals-row">
     <td colspan="2"><strong>TOTAL GERAL</strong></td>
-    ${totCells}${totEmpties}
+    ${totCells}
     <td class="num mono"><strong>${fmt(weekTotals.reduce((a,b)=>a+b,0))}</strong></td>
   </tr>`;
 
-  const weekCards = [0,1,2,3].map(i => {
-    const w = weeks[i];
+  const weekCards = weeks.map((w,i) => {
     const lbl = `${i+1}ª Semana`;
-    const val = w ? weekTotals[i] : 0;
+    const val = weekTotals[i];
     const cls = val > 0 ? 'green' : 'red';
     return `<div class="kpi-card"><div class="kpi-label">${lbl}</div><div class="kpi-value ${cls}">${val>0?fmt(val):'R$ 0'}</div><div class="kpi-sub">${val>0?'Total realizado':'Sem dados'}</div></div>`;
   }).join('');
@@ -829,6 +829,8 @@ function renderSemanal(weeks, sellers) {
   for (let i = weekTotals.length - 1; i >= 0; i--) {
     if (weekTotals[i] > 0) { currentWeekIdx = i; break; }
   }
+
+  const weekHeaderCols = weeks.map((w,i) => `<th class="num">${i+1}ª Semana</th>`).join('');
 
   document.getElementById('semanal-content').innerHTML = `
     ${toolbarHTML()}
@@ -841,8 +843,7 @@ function renderSemanal(weeks, sellers) {
     <div class="table-wrap"><table>
       <thead><tr>
         <th>Vendedor</th><th>Equipe</th>
-        <th class="num">1ª Semana</th><th class="num">2ª Semana</th>
-        <th class="num">3ª Semana</th><th class="num">4ª Semana</th>
+        ${weekHeaderCols}
         <th class="num">Total</th>
       </tr></thead>
       <tbody>${trows}</tbody>
