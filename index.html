@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -582,6 +581,7 @@ function renderMensal(data) {
 
   const totalAgFat= filtered.reduce((s,d)=>s+(d.agFat||0),0);
   const totalAgFin= filtered.reduce((s,d)=>s+(d.agFin||0),0);
+  const totalVA   = filtered.reduce((s,d)=>s+(d.va||0),0);
 
   const filteredWithMeta = filtered.filter(d=>(d.meta||0)>0);
   const totalMeta = filteredWithMeta.reduce((s,d)=>s+(d.meta||0),0);
@@ -640,6 +640,7 @@ function renderMensal(data) {
   document.getElementById('mensal-content').innerHTML = `
     ${toolbarHTML()}
     <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">VA</div><div class="kpi-value amber">${fmt(totalVA)}</div><div class="kpi-sub">Valor adicional do período</div></div>
       <div class="kpi-card"><div class="kpi-label">Meta Total</div><div class="kpi-value">${fmt(totalMeta,0)}</div><div class="kpi-sub">${filteredWithMeta.length} vendedores</div></div>
       <div class="kpi-card"><div class="kpi-label">Faturado</div><div class="kpi-value green">${fmt(totalFat)}</div><div class="kpi-sub">${pct(icmTotal)} da meta</div></div>
       <div class="kpi-card"><div class="kpi-label">Ag. Faturar</div><div class="kpi-value amber">${fmt(totalAgFat)}</div><div class="kpi-sub">Incluso em Vendas Total</div></div>
