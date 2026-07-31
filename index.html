@@ -206,6 +206,7 @@
   <div class="tab active" data-tab="mensal" onclick="showTab(this,'mensal')">Mensal</div>
   <div class="tab" data-tab="clientes" onclick="showTab(this,'clientes')">Clientes &amp; Orçamentos</div>
   <div class="tab" data-tab="semanal" onclick="showTab(this,'semanal')">Semanal</div>
+  <div class="tab" data-tab="maquinas" onclick="showTab(this,'maquinas')">Máquinas Vendidas</div>
 </nav>
 
 <div id="tab-mensal" class="panel active">
@@ -216,6 +217,9 @@
 </div>
 <div id="tab-semanal" class="panel">
   <div id="semanal-content"><div class="loading-state"><div class="loading-spinner"></div><span>Buscando dados...</span></div></div>
+</div>
+<div id="tab-maquinas" class="panel">
+  <div id="maquinas-content"><div class="loading-state"><div class="loading-spinner"></div><span>Buscando dados...</span></div></div>
 </div>
 
 <footer id="footer-info">Dashboard KPIs · Uso exclusivo diretoria</footer>
@@ -469,6 +473,59 @@ function parseSemanal(rows) {
   return weeks;
 }
 
+// Aba "Máquinas Vendidas": Ranking | Equipe | Vendedor | Meta | <um modelo por coluna> | Total Máquinas vendidas
+function parseMaquinas(rows) {
+  let headerIdx = 0;
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = 0; j < rows[i].length; j++) {
+      if ((rows[i][j]||'').toString().trim().toLowerCase() === 'vendedor') { headerIdx = i; break; }
+    }
+  }
+  const headerRow = rows[headerIdx] || [];
+
+  let equipeCol = -1, vendedorCol = -1;
+  headerRow.forEach((h,i) => {
+    const label = (h||'').toString().trim().toLowerCase();
+    if (label === 'equipe') equipeCol = i;
+    if (label === 'vendedor') vendedorCol = i;
+  });
+  if (vendedorCol === -1) return { modelCols: [], sellers: [] };
+
+  let totalCol = -1;
+  let metaCol = -1;
+  const modelCols = [];
+  for (let c = vendedorCol + 1; c < headerRow.length; c++) {
+    const label = (headerRow[c] || '').toString().trim();
+    if (!label) continue;
+    if (label.toLowerCase().includes('total')) { totalCol = c; break; }
+    if (label.toLowerCase() === 'meta') { metaCol = c; continue; }
+    modelCols.push({ col: c, label });
+  }
+
+  // A coluna de valor em R$ (se existir) vem logo depois da coluna de total de máquinas
+  let valorCol = -1;
+  if (totalCol !== -1) {
+    const nextLabel = (headerRow[totalCol + 1] || '').toString().trim().toLowerCase();
+    if (nextLabel.includes('valor')) valorCol = totalCol + 1;
+  }
+
+  const sellers = [];
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    const nome = vendedorCol >= 0 ? (r[vendedorCol]||'').toString().trim() : '';
+    if (!nome) continue;
+    if (nome.toLowerCase().startsWith('totai')) break;
+    const equipe = equipeCol >= 0 ? (r[equipeCol]||'').toString().trim() : '';
+    const models = modelCols.map(mc => num(r[mc.col]) || 0);
+    const total = totalCol >= 0 ? (num(r[totalCol]) || 0) : models.reduce((a,b)=>a+b,0);
+    const valor = valorCol >= 0 ? (num(r[valorCol]) || 0) : 0;
+    const meta = metaCol >= 0 ? (num(r[metaCol]) || 0) : 0;
+    sellers.push({ equipe, nome, models, total, valor, meta });
+  }
+
+  return { modelCols: modelCols.map(mc => mc.label), sellers };
+}
+
 let activeFilter = 'all';
 
 function setFilter(equipe) {
@@ -478,6 +535,7 @@ function setFilter(equipe) {
     renderClientes(window._lastMensalData.sellers, window._lastMensalData);
   }
   if (window._lastWeeks) renderSemanal(window._lastWeeks, window._lastMensalData ? window._lastMensalData.sellers : []);
+  if (window._lastMaquinasData) renderMaquinas(window._lastMaquinasData);
   document.querySelectorAll('.filter-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.equipe === equipe);
   });
@@ -572,6 +630,27 @@ function exportCurrentTab() {
         return [s.nome, s.equipe, ...wv, wv.reduce((a,b)=>a+b,0)];
       }),
       'kpis_semanal.xlsx'
+    );
+  } else if (activeTab === 'maquinas') {
+    const data = window._lastMaquinasData;
+    if (!data) return;
+    const filteredM = data.sellers.filter(s => (s.equipe === 'SP' || s.equipe === 'POA') && (activeFilter==='all' || s.equipe===activeFilter));
+    const sorted = [...filteredM].sort((a,b)=>b.total-a.total);
+    const rowsOut = sorted.map(s => {
+      const pctVal = s.meta>0 ? s.total/s.meta : 0;
+      const gapVal = (s.meta||0) - s.total;
+      return [s.nome, s.equipe, s.meta||0, ...s.models, s.total, +(pctVal*100).toFixed(1), gapVal, +((s.valor||0).toFixed(2))];
+    });
+    const totals = data.modelCols.map((_,i) => sorted.reduce((sum,s)=>sum+(s.models[i]||0),0));
+    const totalValorGeral = sorted.reduce((s,d)=>s+(d.valor||0),0);
+    const totalMetaGeral = sorted.reduce((s,d)=>s+(d.meta||0),0);
+    const totalMaqGeral = sorted.reduce((s,d)=>s+d.total,0);
+    const totalPctGeral = totalMetaGeral>0 ? totalMaqGeral/totalMetaGeral : 0;
+    rowsOut.push(['TOTAL GERAL', '', totalMetaGeral, ...totals, totalMaqGeral, +(totalPctGeral*100).toFixed(1), totalMetaGeral-totalMaqGeral, +totalValorGeral.toFixed(2)]);
+    exportXLSX(
+      ['Vendedor','Equipe','Meta', ...data.modelCols, 'Total Máquinas', '% Meta', 'GAP', 'Valor (R$)'],
+      rowsOut,
+      'kpis_maquinas.xlsx'
     );
   }
 }
@@ -1004,6 +1083,157 @@ function exportDailyBlocks() {
   }
 }
 
+// Nomes dos modelos são longos ("IMPRESSORA PANTUM MULTIFUNCIONAL M7105DW MONO - 110V").
+// Extraímos o código completo do modelo (letra + número, ex: P2509W, M7105DW) pra exibir
+// de forma compacta sem perder a identificação — modelos diferentes podem ter o mesmo
+// número (ex: BP5100DW, BM5100ADW e BM5100FDW), então a letra é essencial pra não misturar.
+function modelCode(label) {
+  const tokens = (label || '').trim().split(/\s+/);
+  const token = tokens.find(t => /\d/.test(t) && t.toUpperCase() !== '110V');
+  return token ? token.toUpperCase() : shortModel(label);
+}
+function shortModel(label) {
+  return (label||'')
+    .replace(/^IMPRESSORA\s+PANTUM\s*/i, '')
+    .replace(/MULTIFUNCIONAL/i, 'MFP')
+    .replace(/\s*-\s*110V/i, '')
+    .trim();
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'table-row' : 'none';
+}
+
+function toggleDetailBlock(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const opening = (el.style.display === 'none' || el.style.display === '');
+  el.style.display = opening ? 'block' : 'none';
+  if (btn) btn.textContent = opening ? 'Ocultar modelos' : 'Ver modelos';
+}
+
+function maquinaModelBreakdownHTML(modelCols, models) {
+  const items = modelCols
+    .map((label, i) => ({ code: modelCode(label), qty: models[i] || 0 }))
+    .filter(m => m.qty > 0)
+    .sort((a, b) => b.qty - a.qty);
+  if (items.length === 0) {
+    return `<p style="color:var(--muted);font-size:12.5px;padding:8px 2px">Nenhuma máquina registrada no período.</p>`;
+  }
+  return `<div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px 2px 2px">
+    ${items.map(m => `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;line-height:1.3">
+      <strong class="mono" style="color:var(--accent)">${m.qty}×</strong> <span class="mono">${m.code}</span>
+    </span>`).join('')}
+  </div>`;
+}
+
+
+
+function renderMaquinas(data) {
+  window._lastMaquinasData = data;
+
+  if (!data || !data.sellers || data.sellers.length === 0) {
+    document.getElementById('maquinas-content').innerHTML = '<div class="error-state"><strong>Nenhum dado de máquinas encontrado.</strong><p>Verifique a aba "Máquinas Vendidas" na planilha.</p></div>';
+    return;
+  }
+
+  const filtered = data.sellers.filter(s => activeFilter === 'all' ? (s.equipe === 'SP' || s.equipe === 'POA') : s.equipe === activeFilter);
+
+  // Totais por filial — sempre calculados com todos os vendedores da equipe,
+  // independente do filtro ativo, pra sempre poder comparar SP vs POA lado a lado.
+  const teams = {};
+  data.sellers.forEach(s => {
+    if (s.equipe !== 'SP' && s.equipe !== 'POA') return;
+    if (!teams[s.equipe]) teams[s.equipe] = { equipe: s.equipe, models: data.modelCols.map(()=>0), total: 0, valor: 0, meta: 0 };
+    s.models.forEach((v,i) => teams[s.equipe].models[i] += (v||0));
+    teams[s.equipe].total += s.total;
+    teams[s.equipe].valor += (s.valor||0);
+    teams[s.equipe].meta += (s.meta||0);
+  });
+
+  const teamOrder = activeFilter === 'all' ? ['SP','POA'] : [activeFilter];
+  const filialCards = teamOrder.filter(eq => teams[eq]).map(eq => {
+    const t = teams[eq];
+    const id = `mf-${eq}`;
+    const pctVal = t.meta > 0 ? t.total / t.meta : 0;
+    const barColor = pctVal>=1?'#10A88E':pctVal>=0.5?'#D99B2B':'#E0654A';
+    return `<div class="week-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          ${teamBadge(eq)}
+          <span class="week-card-title" style="margin-bottom:0">Filial ${eq}</span>
+        </div>
+        <button class="export-btn" style="padding:5px 12px;font-size:11px" onclick="toggleDetailBlock('${id}', this)">Ver modelos</button>
+      </div>
+      <div class="kpi-value" style="font-size:28px">${t.total}<span style="font-size:14px;color:var(--muted);font-weight:500"> / ${t.meta} meta</span></div>
+      <div class="prog-wrap" style="margin:6px 0 4px"><div class="prog-bar"><div class="prog-fill" style="width:${Math.min(pctVal,1)*100}%;background:${barColor}"></div></div><span class="prog-label" style="color:${barColor}">${pct(pctVal)}</span></div>
+      <div class="kpi-sub">máquinas vendidas no período</div>
+      <div class="kpi-value green" style="font-size:18px;margin-top:8px">${fmt(t.valor)}</div>
+      <div class="kpi-sub">valor total em R$</div>
+      <div id="${id}" style="display:none;border-top:1px solid var(--border);margin-top:10px">${maquinaModelBreakdownHTML(data.modelCols, t.models)}</div>
+    </div>`;
+  }).join('');
+
+  const sortedSellers = [...filtered].sort((a,b) => b.total - a.total);
+  const totalGeral = sortedSellers.reduce((s,d)=>s+d.total,0);
+  const totalValorGeral = sortedSellers.reduce((s,d)=>s+(d.valor||0),0);
+  const totalMetaGeral = sortedSellers.reduce((s,d)=>s+(d.meta||0),0);
+  const totalGapGeral = totalMetaGeral - totalGeral;
+
+  let sellerRows = '';
+  sortedSellers.forEach((s,i) => {
+    const id = `mv-${i}`;
+    const pctVal = s.meta > 0 ? s.total / s.meta : 0;
+    const barColor = pctVal>=1?'#10A88E':pctVal>=0.5?'#D99B2B':'#E0654A';
+    const gapVal = (s.meta||0) - s.total;
+    const gapCls = gapVal<=0?'gap-pos':'gap-neg';
+    const gapTxt = gapVal<=0 ? '+'+Math.abs(gapVal) : '-'+gapVal;
+    sellerRows += `<tr>
+      <td>${s.nome}</td>
+      <td>${teamBadge(s.equipe)}</td>
+      <td class="num mono">${s.meta||'—'}</td>
+      <td class="num mono"><strong>${s.total}</strong></td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${Math.min(pctVal,1)*100}%;background:${barColor}"></div></div><span class="prog-label" style="color:${barColor}">${pct(pctVal)}</span></div></td>
+      <td class="num ${gapCls}">${gapTxt}</td>
+      <td class="num mono">${fmt(s.valor)}</td>
+      <td style="text-align:right"><button class="export-btn" style="padding:4px 10px;font-size:11px" onclick="toggleDetail('${id}')">Ver modelos</button></td>
+    </tr>
+    <tr id="${id}" style="display:none">
+      <td colspan="8" style="background:var(--surface2)">${maquinaModelBreakdownHTML(data.modelCols, s.models)}</td>
+    </tr>`;
+  });
+  const totalGapCls = totalGapGeral<=0?'gap-pos':'gap-neg';
+  const totalGapTxt = totalGapGeral<=0 ? '+'+Math.abs(totalGapGeral) : '-'+totalGapGeral;
+  const totalPctVal = totalMetaGeral>0 ? totalGeral/totalMetaGeral : 0;
+  sellerRows += `<tr class="totals-row">
+    <td colspan="2"><strong>TOTAL GERAL</strong></td>
+    <td class="num mono"><strong>${totalMetaGeral}</strong></td>
+    <td class="num mono"><strong>${totalGeral}</strong></td>
+    <td class="num mono"><strong>${pct(totalPctVal)}</strong></td>
+    <td class="num ${totalGapCls}"><strong>${totalGapTxt}</strong></td>
+    <td class="num mono"><strong>${fmt(totalValorGeral)}</strong></td>
+    <td></td>
+  </tr>`;
+
+  document.getElementById('maquinas-content').innerHTML = `
+    ${toolbarHTML()}
+    <div class="section-title">Máquinas Vendidas — Por Filial</div>
+    <div class="week-grid">${filialCards}</div>
+
+    <div class="section-title">Máquinas Vendidas — Por Vendedor</div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Vendedor</th><th style="width:70px">Equipe</th>
+        <th class="num">Meta</th><th class="num">Total Máquinas</th>
+        <th style="min-width:100px">% Meta</th><th class="num">GAP</th>
+        <th class="num">Valor (R$)</th><th style="width:130px"></th>
+      </tr></thead>
+      <tbody>${sellerRows}</tbody>
+    </table></div>`;
+}
+
 function showError(containerId, msg) {
   document.getElementById(containerId).innerHTML = `
     <div class="error-state">
@@ -1050,6 +1280,16 @@ async function loadAll() {
   } catch (err) {
     console.error(err);
     showError('semanal-content', err.message);
+  }
+
+  try {
+    const csvMaquinas = await fetchCSV('Máquinas Vendidas');
+    const rowsMaquinas = parseCSV(csvMaquinas);
+    const maquinasData = parseMaquinas(rowsMaquinas);
+    renderMaquinas(maquinasData);
+  } catch (err) {
+    console.error(err);
+    showError('maquinas-content', err.message);
   }
 
   icon.classList.remove('spin');
