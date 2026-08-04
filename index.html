@@ -181,6 +181,19 @@
 </head>
 <body>
 
+<div id="auth-gate" style="position:fixed;inset:0;z-index:9999;background:#0F1C2E;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border-radius:14px;padding:36px 32px;width:100%;max-width:340px;box-shadow:0 10px 40px rgba(0,0,0,.35);text-align:center">
+    <div style="width:44px;height:44px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px">🔒</div>
+    <h2 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px">Dashboard de KPIs</h2>
+    <p style="font-size:12.5px;color:var(--muted);margin-bottom:20px">Uso exclusivo diretoria — digite a senha de acesso</p>
+    <input id="auth-password" type="password" placeholder="Senha" autocomplete="off"
+      style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:16px;font-family:'Sora',sans-serif;margin-bottom:10px;box-sizing:border-box;outline:none"
+      onkeydown="if(event.key==='Enter') checkAuth()">
+    <button onclick="checkAuth()" class="btn-refresh" style="width:100%;justify-content:center;background:var(--accent);border-color:var(--accent);padding:10px;font-size:13px">Entrar</button>
+    <p id="auth-error" style="display:none;color:var(--red);font-size:12px;margin-top:10px">Senha incorreta. Tente novamente.</p>
+  </div>
+</div>
+
 <header>
   <div class="header-left">
     <div style="width:40px;height:40px;border-radius:8px;background:#fff"></div>
@@ -225,6 +238,36 @@
 <footer id="footer-info">Dashboard KPIs · Uso exclusivo diretoria</footer>
 
 <script>
+// --- Acesso por senha ---
+// Trava simples do lado do cliente: impede acesso casual de quem não tem a
+// senha. Não é segurança de verdade (o código roda no navegador da pessoa),
+// mas serve como uma porta fechada pra quem só tem o link.
+const AUTH_PASSWORD = 'Kpi3i2026';
+const AUTH_STORAGE_KEY = 'kpi3i_auth_ok';
+
+function checkAuth() {
+  const input = document.getElementById('auth-password');
+  const err = document.getElementById('auth-error');
+  if (input.value === AUTH_PASSWORD) {
+    try { localStorage.setItem(AUTH_STORAGE_KEY, '1'); } catch(e) {}
+    document.getElementById('auth-gate').style.display = 'none';
+  } else {
+    err.style.display = 'block';
+    input.value = '';
+    input.focus();
+  }
+}
+
+(function initAuth() {
+  let alreadyOk = false;
+  try { alreadyOk = localStorage.getItem(AUTH_STORAGE_KEY) === '1'; } catch(e) {}
+  if (alreadyOk) {
+    document.getElementById('auth-gate').style.display = 'none';
+  } else {
+    document.getElementById('auth-password').focus();
+  }
+})();
+
 const SHEET_ID = '1LVypMf3e4TGDtcYa7p9z6Po3Ku3ZDCjSbMVh6V14xcA';
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyO9r0PY9riCRYGK47pThgP76N7AGe8X4IaM1smdvJt4-8i_aZxokUcZRGAInIFq0rtXw/exec';
